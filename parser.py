@@ -314,21 +314,21 @@ class hsi_gauge(gauges):
                 window.blit(self.l,self.origin)
 
 class lamps_class:
-    bg=((0,30,0),(30,30,0),(25,30,25),(30,0,0),(0,0,0))
-    bg_active=((0,60,0),(60,60,0),(50,60,50),(60,0,0),(0,0,0))
-    text=((60,255,60),(255,255,60),(200,255,200),(255,60,60),(0,0,0))
+    bg_color=((0,30,0),(30,30,0),(25,30,25),(30,0,0),(0,0,0))
+    bg_active_color=((0,60,0),(60,60,0),(50,60,50),(60,0,0),(0,0,0))
+    text_color=((60,255,60),(255,255,60),(200,255,200),(255,60,60),(0,0,0))
 
     width=59
     height=25
     offset=3
 
-    mesh=(
-    ((655535,4,"",4,""),(165,0,"ENR",0,"NAV ON"),(164,0,"AC-POS",0,"CAL-DATA"),(211,0,"X-FEED",0,"VLV OPEN"),(167,0,"MASTER",0,"ARM ON"),(189,1,"computer",1,"diagnose"),(181,2,"lh eng",2,"anti-ice"),(182,2,"rh eng",2,"anti-ice"),(200,2,"fwd tank",0,"pump on"),(201,2,"aft tank",0,"pump on"),(78,3,"lh eng",3,"overspd"),(79,3,"rh eng",3,"overspd"),(80,3,"over-g",3,"")),
-    ((170,0,"r-alt",0,"hold"),(171,0,"enr",0,"course"),(178,3,"weap",3,"arm"),(187,0,"turbo",0,"gear"),(180,0,"weapon",0,"training"),(206,1,"computer",1,"fail"),(190,0,"lh eng",0,"dust-prot"),(191,0,"rh eng",0,"dust-prot"),(209,0,"lh vlv",0,"closed"),(210,0,"rh vlv",0,"closed"),(81,3,"lh eng",3,"vibr"),(82,3,"rh eng",3,"vibr"),(83,3,"ias",3,"max")),
-    ((175,0,"auto",0,"hover"),(176,0,"next",0,"wp"),(173,0,"cannon",0,""),(204,0,"agb",0,"oil press"),(179,1,"hms",1,"fail"),(212,0,"inverter",0,"on"),(207,1,"lh power",1,"set lim"),(208,1,"rh power",1,"set lim"),(185,0,"lh outer",0,"tank pump"),(186,0,"rh outer",0,"tank pump"),(84,3,"main",3,"grbx"),(85,3,"fire",3,""),(86,3,"iff",3,"fail")),
-    ((172,0,"auto",0,"descent"),(166,0,"route",0,"end"),(177,0,"cannon",0,"v"),(213,0,"sl-hook",0,"open"),(188,1,"hud",1,"no ready"),(205,1,"skval",1,"fail"),(183,0,"rotor",0,"anti-ice"),(184,0,"wndshld",0,"heater"),(202,0,"lh inner",0,"tank pump"),(203,0,"rh inner",0,"tank pump"),(46,1,"rotor",1,"rpm"),(44,3,"master",3,"warning"),(2222,4,"",4,"")),
-    ((237,3,"fire",3,"lh eng"),(239,3,"fire",3,"apu"),(568,3,"fire",3,"hydr"),(241,3,"fire",3,"rh eng"),(243,3,"fire",3,"grbx"),(244,3,"1",3,""),(245,3,"2",3,""),(655535,4,"",4,""),(6,2,"apu tmp",2,""),(162,2,"apu vlv",2,"open"),(168,2,"apu oil",2,"press"),(169,2,"apu stop",2,"rpm"),(174,2,"apu",2,"on"))
-    )
+    mesh=[
+    [[655535,4,"",4,""],[165,0,"ENR",0,"NAV ON"],[164,0,"AC-POS",0,"CAL-DATA"],[211,0,"X-FEED",0,"VLV OPEN"],[167,0,"MASTER",0,"ARM ON"],[189,1,"computer",1,"diagnose"],[181,2,"lh eng",2,"anti-ice"],[182,2,"rh eng",2,"anti-ice"],[200,2,"fwd tank",0,"pump on"],[201,2,"aft tank",0,"pump on"],[78,3,"lh eng",3,"overspd"],[79,3,"rh eng",3,"overspd"],[80,3,"over-g",3,""]],
+    [[170,0,"r-alt",0,"hold"],[171,0,"enr",0,"course"],[178,3,"weap",3,"arm"],[187,0,"turbo",0,"gear"],[180,0,"weapon",0,"training"],[206,1,"computer",1,"fail"],[190,0,"lh eng",0,"dust-prot"],[191,0,"rh eng",0,"dust-prot"],[209,0,"lh vlv",0,"closed"],[210,0,"rh vlv",0,"closed"],[81,3,"lh eng",3,"vibr"],[82,3,"rh eng",3,"vibr"],[83,3,"ias",3,"max"]],
+    [[175,0,"auto",0,"hover"],[176,0,"next",0,"wp"],[173,0,"cannon",0,""],[204,0,"agb",0,"oil press"],[179,1,"hms",1,"fail"],[212,0,"inverter",0,"on"],[207,1,"lh power",1,"set lim"],[208,1,"rh power",1,"set lim"],[185,0,"lh outer",0,"tank pump"],[186,0,"rh outer",0,"tank pump"],[84,3,"main",3,"grbx"],[85,3,"fire",3,""],[86,3,"iff",3,"fail"]],
+    [[172,0,"auto",0,"descent"],[166,0,"route",0,"end"],[177,0,"cannon",0,"v"],[213,0,"sl-hook",0,"open"],[188,1,"hud",1,"no ready"],[205,1,"skval",1,"fail"],[183,0,"rotor",0,"anti-ice"],[184,0,"wndshld",0,"heater"],[202,0,"lh inner",0,"tank pump"],[203,0,"rh inner",0,"tank pump"],[46,1,"rotor",1,"rpm"],[44,3,"master",3,"warning"],[2222,4,"",4,""]],
+    [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[655535,4,"",4,""],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]]
+    ]
 
     rows=len(mesh)
     cols=len(mesh[0])
@@ -340,24 +340,31 @@ class lamps_class:
         self.draw(True)
 
     def draw(self,force=False):
+        turn_off_once=False
         for r in range(self.rows):
             for c in range(self.cols):
                 rec=self.mesh[r][c]
-                if gau[rec[0]]>0 or force:
-                    pygame.draw.rect(window,self.bg_active[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
 
-                    text=self.sf.render(rec[2].upper(),1,self.text[rec[1]])
+                if rec[0]==6:                       #dynamic update of APU temperature #6 values in the lamp box
+                    temperature=int(900*gau[6])
+                    if temperature==0:
+                        turn_off_once=True
+                    rec[4]=str(temperature)
+
+                if (gau[rec[0]]>0 and not turn_off_once) or force:
+                    pygame.draw.rect(window,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
+
+                    text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
                     w,h=text.get_size()
                     window.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
 
-                    txt=rec[4].upper()
-                    if r==4 and c==8:
-                        txt=str(int(900*gau[6]))
-                    text=self.sf.render(txt,1,self.text[rec[3]])
+                    text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
                     w,h=text.get_size()
                     window.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
+
+                    turn_off_once=False
                 else:
-                    pygame.draw.rect(window,self.bg[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
+                    pygame.draw.rect(window,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
 #            pygame.draw.line(window,(0,0,0),(0,r*self.height-3),(self.cols*self.width,r*self.height-3))
 
 class ekran_class:
