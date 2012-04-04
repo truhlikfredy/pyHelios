@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys,socket,string,pygame,math,time,gc
+import sys,socket,string,pygame,math,time,gc,pprint
 from collections import defaultdict
 
 gau=defaultdict(int)
@@ -365,7 +365,6 @@ class lamps_class:
                     turn_off_once=False
                 else:
                     pygame.draw.rect(window,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
-#            pygame.draw.line(window,(0,0,0),(0,r*self.height-3),(self.cols*self.width,r*self.height-3))
 
 class ekran_class:
     color=(239,171,1)
@@ -430,23 +429,39 @@ sock.bind( (udp_ip,udp_port) )
 #2001,2002,2004 ekran \n+3riadky,
 
 while True:
+    first=0
     data,addr=sock.recvfrom(1024)
     tmp=string.split(data[9:-1],":")
     for rec in tmp:
         key,val=string.split(rec,"=")
         key=int(key)
 
+        if key==2001 or key==2002:
+            pprint.pprint(rec)
+
+        if first==0 and (key==2001 or key==2002):
+            first=key
+
+        if first==2001 and key==2002:
+            print "enabled"
+
+        if first==2002 and key==2001:
+            print "disabled"
+
         try:
             val=float(val)
             gau[key]=val
         except:
             print str(key)+' = '+val
+#            pprint.pprint(val)
             gau_text[key]=val
             pass
 
 
 #        print str(key)+'='+str(gau[key])
 #        print gau[24]
+    if first>0:
+        print 'end of packet'
 
     for obj in gc.get_objects():
         if isinstance(obj,gauges):
