@@ -17,10 +17,14 @@ def conv_nonlinear(table,value):
 class gauges:
     color={'white':(255,255,255),'red':(255,150,150),'red+':(255,100,100),'red++':(255,50,50),'red+++':(255,0,0),'green':(150,255,150),'green+':(100,255,100),'grey':(100,100,100)}
 
-    def __init__(self,bg,x,y,size,radius=None,draw_on_init=True):
+    def __init__(self,bg,origin,size,radius=None,draw_on_init=True):
         if radius==None:
             radius=size/2
 
+        x,y=origin
+
+        self.next_right=(x+size,y)
+        self.next_row=(0,y+size)
         self.refresh=True
         self.val={0:0,1:None}
         self.val_old={0:-1,1:None}
@@ -202,14 +206,14 @@ class radar_gauge(gauges):
 
 class adi_gauge(gauges):
     #not all informations are displaying, but it's in just very rare cases when they are needed and are not in the default values
-    def __init__(self,bg,x,y,size,radius=None,draw_on_init=True):
+    def __init__(self,bg,origin,size,radius=None,draw_on_init=True):
         self.horisont=pygame.image.load('img/adi-horisont.png')
         self.wings=pygame.image.load('img/adi-wings.png')
         self.ball=pygame.image.load('img/adi-ball.png')
         self.instr_x=76
         self.instr_y=69
         self.ball_y=146
-        gauges.__init__(self,bg,x,y,size,radius,draw_on_init)
+        gauges.__init__(self,bg,origin,size,radius,draw_on_init)
 
     def check_draw(self):
         self.val['roll']=180*gau[100]
@@ -242,7 +246,7 @@ class hsi_gauge(gauges):
     #hsi_range_tenth
     #hsi_course_hundreds
     #hsi_course_units
-    def __init__(self,bg,x,y,size,radius=None,draw_on_init=True):
+    def __init__(self,bg,origin,size,radius=None,draw_on_init=True):
         self.compas=pygame.image.load('img/hsi-compas.png')
         self.dta=pygame.image.load('img/hsi-dta.png')
         self.hover_back=pygame.image.load('img/hsi-hover-back.png')
@@ -258,7 +262,7 @@ class hsi_gauge(gauges):
 
         self.font=pygame.font.Font(None,24)
 
-        gauges.__init__(self,bg,x,y,size,radius,draw_on_init)
+        gauges.__init__(self,bg,origin,size,radius,draw_on_init)
 
     def check_draw(self):
         self.val['heading']=gau[112]
@@ -316,6 +320,7 @@ class lamps_class:
 
     width=59
     height=25
+    offset=3
 
     mesh=(
     ((655535,4,"",4,""),(165,0,"ENR",0,"NAV ON"),(164,0,"AC-POS",0,"CAL-DATA"),(211,0,"X-FEED",0,"VLV OPEN"),(167,0,"MASTER",0,"ARM ON"),(189,1,"computer",1,"diagnose"),(181,2,"lh eng",2,"anti-ice"),(182,2,"rh eng",2,"anti-ice"),(200,2,"fwd tank",0,"pump on"),(201,2,"aft tank",0,"pump on"),(78,3,"lh eng",3,"overspd"),(79,3,"rh eng",3,"overspd"),(80,3,"over-g",3,"")),
@@ -328,9 +333,9 @@ class lamps_class:
     rows=len(mesh)
     cols=len(mesh[0])
 
-    offset=height*rows
-
     def __init__(self):
+        self.next_right=(self.width*self.cols,self.height)
+        self.next_row=(0,self.height*self.rows-self.offset)
         self.sf=pygame.font.Font(None,14)
         self.draw(True)
 
@@ -339,7 +344,7 @@ class lamps_class:
             for c in range(self.cols):
                 rec=self.mesh[r][c]
                 if gau[rec[0]]>0 or force:
-                    pygame.draw.rect(window,self.bg_active[rec[1]],(c*59,r*25-3,self.width-1,self.height-1))
+                    pygame.draw.rect(window,self.bg_active[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
 
                     text=self.sf.render(rec[2].upper(),1,self.text[rec[1]])
                     w,h=text.get_size()
@@ -352,12 +357,14 @@ class lamps_class:
                     w,h=text.get_size()
                     window.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
                 else:
-                    pygame.draw.rect(window,self.bg[rec[1]],(c*self.width,r*self.height-3,self.width-1,self.height-1))
+                    pygame.draw.rect(window,self.bg[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
 #            pygame.draw.line(window,(0,0,0),(0,r*self.height-3),(self.cols*self.width,r*self.height-3))
 
 class ekran_class:
     color=(239,171,1)
     def __init__(self,origin):
+        self.w=100
+        self.h=25*3
         self.origin=origin
         self.x,self.y=origin
         self.f=pygame.font.Font(None,16)
@@ -368,7 +375,7 @@ class ekran_class:
          if gau_text.has_key(2004):
             text=gau_text[2004].split('\n')
             if len(text)==4:
-                pygame.draw.rect(window,(0,0,0),(self.x,self.y,100,25*3))
+                pygame.draw.rect(window,(0,0,0),(self.x,self.y,self.w,self.h))
                 off=0
                 for txt in text:
                     line=self.f.render(txt,1,self.color)
@@ -387,23 +394,22 @@ window=pygame.display.set_mode((768,650))
 
 lamps=lamps_class()
 
-blade=blade_gauge('img/blade.png',gauge_small*0,gauge_small*0+lamps.offset,gauge_small,45)
-ias=ias_gauge('img/ias.png',gauge_small*1,gauge_small*0+lamps.offset,gauge_small,45)
-acc=acc_gauge('img/acc.png',gauge_small*2,gauge_small*0+lamps.offset,gauge_small,40)
-rotor_rpm=rotor_rpm_gauge('img/rotor-rpm.png',gauge_small*3,gauge_small*0+lamps.offset,gauge_small,40)
-eng_rpm=eng_rpm_gauge('img/eng-rpm.png',gauge_small*4,gauge_small*0+lamps.offset,gauge_small,45)
+blade=blade_gauge('img/blade.png',lamps.next_row,gauge_small,45)
+ias=ias_gauge('img/ias.png',blade.next_right,gauge_small,45)
+acc=acc_gauge('img/acc.png',ias.next_right,gauge_small,40)
+rotor_rpm=rotor_rpm_gauge('img/rotor-rpm.png',acc.next_right,gauge_small,40)
+eng_rpm=eng_rpm_gauge('img/eng-rpm.png',rotor_rpm.next_right,gauge_small,45)
 
-fuel=fuel_gauge('img/fuel.png',gauge_small*0,gauge_small*1+lamps.offset,gauge_small,45)
-temp=temp_gauge('img/temp.png',gauge_small*1,gauge_small*1+lamps.offset,gauge_small,20)
-baro=baro_gauge('img/baro.png',gauge_small*2,gauge_small*1+lamps.offset,gauge_small,55)
-clock=clock_gauge('img/clock.png',gauge_small*3,gauge_small*1+lamps.offset,gauge_small,20)
-adi=adi_gauge('img/adi-instrument.png',gauge_small*4,gauge_small*1+lamps.offset,gauge_small)
+fuel=fuel_gauge('img/fuel.png',eng_rpm.next_row,gauge_small,45)
+temp=temp_gauge('img/temp.png',fuel.next_right,gauge_small,20)
+baro=baro_gauge('img/baro.png',temp.next_right,gauge_small,55)
+clock=clock_gauge('img/clock.png',baro.next_right,gauge_small,20)
+adi=adi_gauge('img/adi-instrument.png',clock.next_right,gauge_small)
 
-vvi=vvi_gauge('img/vvi.png',gauge_big*0,gauge_small*2+lamps.offset,gauge_big,55)
-radar=radar_gauge('img/radar.png',gauge_big*1,gauge_small*2+lamps.offset,gauge_big,50)
-hsi=hsi_gauge('img/hsi-top.png',gauge_big*2,gauge_small*2+lamps.offset,gauge_big)
-
-ekran=ekran_class((gauge_big*3,gauge_small*2+lamps.offset))
+vvi=vvi_gauge('img/vvi.png',adi.next_row,gauge_big,55)
+radar=radar_gauge('img/radar.png',vvi.next_right,gauge_big,50)
+hsi=hsi_gauge('img/hsi-top.png',radar.next_right,gauge_big)
+ekran=ekran_class(hsi.next_right)
 
 
 pygame.display.flip()
