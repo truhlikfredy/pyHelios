@@ -1,5 +1,44 @@
 #!/usr/bin/python
 
+#BS2/scripts/aircrafts/ka-50/cockpit/devices.lua
+#BS2/scripts/aircrafts/ka-50/copkpit/mainpanel_init.lua
+#BS2/scripts/aircrafts/ka-50/copkpit/command_defs.lua
+#BS2/scripts/aircrafts/ka-50/copkpit/clickabledata.lua
+#BS2/bin/cockpitka50.dll        #hidden methods of devices
+#BS2/config/export/export.lua
+#--world events
+#BIRTH_ON_PARKING_AREA 	= 10001,
+#BIRTH_ON_RUNWAY			= 10002,
+#BIRTH_COLD_ON_HELIPAD	= 10003,
+#BIRTH_HOT_ON_HELIPAD	= 10004,
+#TAKEOFF					= 10005,
+#LANDING					= 10006,
+#--inner events
+#STARTUP_PERMISSION_FROM_AIRDROME = 10007,
+#STARTUP_PERMISSION_FROM_HELIPAD = 10008,
+#--
+#START_WP_DIALOG 		= 10009,
+#START_IR_POINTER_DIALOG = 10010,
+#START_LASER_DIALOG 		= 10011,
+
+#00030.546 DEBUG   LuaExport::LuaExportStart: (metatable)
+#00030.546 DEBUG   LuaExport::LuaExportStart: __index
+#00030.546 DEBUG   LuaExport::LuaExportStart:   [__index] = (table)
+#00030.546 DEBUG   LuaExport::LuaExportStart: get_frequency
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 000000005B3B4EA0
+#00030.546 DEBUG   LuaExport::LuaExportStart: performClickableAction
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BBB910
+#00030.546 DEBUG   LuaExport::LuaExportStart: is_on
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 000000005B3B2CF0
+#00030.546 DEBUG   LuaExport::LuaExportStart: listen_event
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 000000005B3B5D30
+#00030.546 DEBUG   LuaExport::LuaExportStart: set_channel
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 000000005B3DF560
+#00030.546 DEBUG   LuaExport::LuaExportStart: listen_command
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BBB960
+#00030.546 DEBUG   LuaExport::LuaExportStart: SetCommand
+#00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BC89F0
+
 import sys,socket,string,pygame,math,time,gc,pprint
 from collections import defaultdict
 
@@ -314,20 +353,30 @@ class hsi_gauge(gauges):
                 window.blit(self.l,self.origin)
 
 class lamps_class:
-    bg_color=((0,30,0),(30,30,0),(25,30,25),(30,0,0),(0,0,0))
-    bg_active_color=((0,60,0),(60,60,0),(50,60,50),(60,0,0),(0,0,0))
-    text_color=((60,255,60),(255,255,60),(200,255,200),(255,60,60),(0,0,0))
+    #63 nose up,59 lef gear,61 right gear, 48 lower gear warn lamp but didn't saw it in copkit
+
+    #                   0=green,        1=yellow,       2=white-green,  3=red,          4=black,    5=landing gear  6=lit buttons
+    bg_color=(          (0,30,0),       (30,30,0),      (25,30,25),     (30,0,0),       (0,0,0),    (60,0,0),       (1,39,51))
+    bg_active_color=(   (0,60,0),       (60,60,0),      (50,60,50),     (60,0,0),       (0,0,0),    (0,60,0),       (0,127,180))
+    text_color=(        (60,255,60),    (255,255,60),   (200,255,200),  (255,60,60),    (0,0,0),    (255,255,255),  (196,205,226))
 
     width=59
     height=25
     offset=3
 
+    def_na=65535
+    def_radio=65534
+
     mesh=[
-    [[655535,4,"",4,""],[165,0,"ENR",0,"NAV ON"],[164,0,"AC-POS",0,"CAL-DATA"],[211,0,"X-FEED",0,"VLV OPEN"],[167,0,"MASTER",0,"ARM ON"],[189,1,"computer",1,"diagnose"],[181,2,"lh eng",2,"anti-ice"],[182,2,"rh eng",2,"anti-ice"],[200,2,"fwd tank",0,"pump on"],[201,2,"aft tank",0,"pump on"],[78,3,"lh eng",3,"overspd"],[79,3,"rh eng",3,"overspd"],[80,3,"over-g",3,""]],
+#    [[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]]
+    [[def_na,4,"",4,""],[165,0,"ENR",0,"NAV ON"],[164,0,"AC-POS",0,"CAL-DATA"],[211,0,"X-FEED",0,"VLV OPEN"],[167,0,"MASTER",0,"ARM ON"],[189,1,"computer",1,"diagnose"],[181,2,"lh eng",2,"anti-ice"],[182,2,"rh eng",2,"anti-ice"],[200,2,"fwd tank",0,"pump on"],[201,2,"aft tank",0,"pump on"],[78,3,"lh eng",3,"overspd"],[79,3,"rh eng",3,"overspd"],[80,3,"over-g",3,""]],
     [[170,0,"r-alt",0,"hold"],[171,0,"enr",0,"course"],[178,3,"weap",3,"arm"],[187,0,"turbo",0,"gear"],[180,0,"weapon",0,"training"],[206,1,"computer",1,"fail"],[190,0,"lh eng",0,"dust-prot"],[191,0,"rh eng",0,"dust-prot"],[209,0,"lh vlv",0,"closed"],[210,0,"rh vlv",0,"closed"],[81,3,"lh eng",3,"vibr"],[82,3,"rh eng",3,"vibr"],[83,3,"ias",3,"max"]],
     [[175,0,"auto",0,"hover"],[176,0,"next",0,"wp"],[173,0,"cannon",0,""],[204,0,"agb",0,"oil press"],[179,1,"hms",1,"fail"],[212,0,"inverter",0,"on"],[207,1,"lh power",1,"set lim"],[208,1,"rh power",1,"set lim"],[185,0,"lh outer",0,"tank pump"],[186,0,"rh outer",0,"tank pump"],[84,3,"main",3,"grbx"],[85,3,"fire",3,""],[86,3,"iff",3,"fail"]],
     [[172,0,"auto",0,"descent"],[166,0,"route",0,"end"],[177,0,"cannon",0,"v"],[213,0,"sl-hook",0,"open"],[188,1,"hud",1,"no ready"],[205,1,"skval",1,"fail"],[183,0,"rotor",0,"anti-ice"],[184,0,"wndshld",0,"heater"],[202,0,"lh inner",0,"tank pump"],[203,0,"rh inner",0,"tank pump"],[46,1,"rotor",1,"rpm"],[44,3,"master",3,"warning"],[2222,4,"",4,""]],
-    [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[655535,4,"",4,""],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]]
+    [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[def_na,4,"",4,""],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]],
+    [[2001,0,"store",0,""],[2002,0,"remain",0,""],[2003,0,"rnds",0,""],[60,5,"lnd gear",5,"left"],[64,5,"lnd gear",5,"nose"],[62,5,"lnd gear",5,"right"],[586,0,"ext ac",0,"pwr"],[261,0,"ext dc",0,"pwr"],[def_radio,2,"r-800",2,""],[3001,2,"spu-9",2,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]],
+    [[def_na,4,"",4,""],[def_na,4,"",4,""],[437,6,"auto",6,"turn"],[439,6,"a/a",6,"h o"],[441,6,"reset",6,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]],
+    [[def_na,4,"",4,""],[def_na,4,"",4,""],[438,6,"a/a",6,""],[440,6,"mov",6,"gnd tgt"],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]]
     ]
 
     rows=len(mesh)
@@ -341,6 +390,7 @@ class lamps_class:
 
     def draw(self,force=False):
         turn_off_once=False
+        turn_on_once=False
         for r in range(self.rows):
             for c in range(self.cols):
                 rec=self.mesh[r][c]
@@ -351,7 +401,43 @@ class lamps_class:
                         turn_off_once=True
                     rec[4]=str(temperature)
 
-                if (gau[rec[0]]>0 and not turn_off_once) or force:
+                if rec[0]==2001:                    #dynamic update of weapons type and remaining rounds/storages
+                    if gau[2002]>-1:
+                        #StationTypes = {["9A4172"] = "NC", ["S-8KOM"] = "HP", ["S-13"] = "HP", ["UPK-23-250"] = "NN", ["AO-2.5RT"] = "A6", ["PTAB-2.5KO"] = "A6", ["FAB-250"] = "A6", ["FAB-500"] = "A6" }
+                        if gau_text.has_key(2001):
+                            if gau_text[2001]==" ":
+                                rec[4]='HP'
+                            else:
+                                rec[4]=gau_text[2001]
+
+                        turn_on_once=True
+
+#                if rec[0]==2002 or rec[0]==2003:    #same as above
+#                    rec[4]=str(int(gau[rec[0]]))
+
+                if rec[0]==2002:                    #same as above
+                    rec[4]=str(int(gau[rec[0]]))
+
+                if rec[0]==2003:                    #same as above
+                    rec[4]=str(int(gau[rec[0]]))
+
+                if rec[0]==self.def_radio:               #displaying radio freq
+                    turn_on_once=True
+                    tmp=round(gau[577]*23)+10
+                    if tmp>14:
+                        tmp=tmp+7
+                    tmp=float(int((tmp+gau[574])*10))+gau[575]+gau[576]/10
+
+                    rec[4]=str(round(tmp,3))
+
+                if rec[0]==3001:
+                    radio_text={0:'vhf2',1:'vhf1',2:'sw',3:'grn crw'}
+                    turn_on_once=True
+                    rec[4]=radio_text[gau[rec[0]]]
+
+
+
+                if (gau[rec[0]]>0 and not turn_off_once) or force or turn_on_once:
                     pygame.draw.rect(window,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
 
                     text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
@@ -361,10 +447,10 @@ class lamps_class:
                     text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
                     w,h=text.get_size()
                     window.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
-
-                    turn_off_once=False
+                    turn_on_once=False
                 else:
                     pygame.draw.rect(window,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
+                    turn_off_once=False
 
 class ekran_class:
     color=(239,171,1)
@@ -429,39 +515,36 @@ sock.bind( (udp_ip,udp_port) )
 #2001,2002,2004 ekran \n+3riadky,
 
 while True:
-    first=0
     data,addr=sock.recvfrom(1024)
     tmp=string.split(data[9:-1],":")
     for rec in tmp:
         key,val=string.split(rec,"=")
         key=int(key)
 
-        if key==2001 or key==2002:
-            pprint.pprint(rec)
-
-        if first==0 and (key==2001 or key==2002):
-            first=key
-
-        if first==2001 and key==2002:
-            print "enabled"
-
-        if first==2002 and key==2001:
-            print "disabled"
+        if key>2999 or key==581 or key==375:
+            print rec
 
         try:
             val=float(val)
             gau[key]=val
+#            if key>2000:
+#                pprint.pprint(rec)
+
         except:
+            #text values which i prefer to have number storage
+#           if key==2002 or key==2001:
+            if key==2002:
+                gau[key]=-1
+
+            #all other values
             print str(key)+' = '+val
 #            pprint.pprint(val)
             gau_text[key]=val
-            pass
+
 
 
 #        print str(key)+'='+str(gau[key])
 #        print gau[24]
-    if first>0:
-        print 'end of packet'
 
     for obj in gc.get_objects():
         if isinstance(obj,gauges):
