@@ -39,7 +39,7 @@
 #00030.546 DEBUG   LuaExport::LuaExportStart: SetCommand
 #00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BC89F0
 
-import sys,socket,string,pygame,math,time,gc,pprint,threading
+import os,sys,socket,string,pygame,math,time,gc,pprint,threading
 from collections import defaultdict
 
 rotate=0
@@ -48,7 +48,6 @@ resolution=(768,650)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
-gau_old=defaultdict(int)
 gau_text={}
 
 
@@ -527,6 +526,62 @@ class update_data_class(threading.Thread):
 #'{:*^30}'.format('centered')
 #sys.stdout.write(str('{0:{width}{key}}='.format(key=key,val=gau[key])))
 
+class debug_class:
+    def  __init__(self,cols=8,force_always=True,force_count=0):
+        self.cols=cols
+        self.force_always=force_always
+        self.force_count_def=force_count
+        self.force_count=force_count
+
+        self.gau_old=defaultdict(int)
+        self.gau_count=defaultdict(int)
+
+
+    def enable_count(self,count):
+        self.force_always=False
+        self.force_count_def=count
+        self.force_count=count
+
+    def print_out(self):
+        gau_lock.acquire()
+        os.system('clear')                  #ms system os.system('CLS')
+        cols=0
+        print 'Debug output of variables'
+        for key in sorted(gau.keys()) :
+            cols=cols+1
+            refresh=True
+
+            if self.gau_old[key]!=gau[key]:
+                self.gau_count[key]=self.force_count
+            else:
+                if self.gau_count[key]>0:
+                    self.gau_count[key]=self.gau_count[key]-1
+                else:
+                    refresh=False
+
+            if refresh:
+                key_color='\033[0m\033[31m'
+                val_color='\033[0m\033[0m'
+            else:
+                key_color='\033[1m\033[34m'
+                val_color='\033[0m\033[36m'
+
+
+            sys.stdout.write(key_color+str(key).rjust(5,' ')+'='+val_color+str(gau[key]).ljust(7,' ')+'\033[0m'+' ')
+            if (cols%self.cols==0):
+                sys.stdout.write('\n')
+
+            self.gau_old[key]=gau[key]
+
+        if self.force_count>0 and self.force_always==False:
+            self.force_count=self.force_count-1
+        else:
+            self.force_count=self.force_count_def
+
+        sys.stdout.write('\n')
+        gau_lock.release()
+
+
 
 gauge_small=153
 gauge_big=192
@@ -579,26 +634,12 @@ pygame.display.flip()
 gatherer=update_data_class()
 gatherer.start()
 
+debug=debug_class()
+debug.enable_count(40)
+
 while True:
 
-    if True:
-        gau_lock.acquire()
-        count=0
-        print 'Debug output of variables'
-        for key in gau.keys() :
-            count=count+1
-            color='\033[1m\033[34m'
-            if not gau_old[key]==gau[key]:
-                color='\033[0m\033[34m'
-
-            sys.stdout.write('\033[36m'+str(key).zfill(5)+'='+color+str(gau[key]).zfill(7)+'\033[0m'+'\t')
-            if (count%7==0):
-                sys.stdout.write('\n')
-
-            gau_old[key]=gau[key]
-
-        sys.stdout.write('\n')
-        gau_lock.release()
+    debug.print_out()
 
     gau_updated.wait()
     gau_lock.acquire()
