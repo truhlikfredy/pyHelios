@@ -39,11 +39,15 @@
 #00030.546 DEBUG   LuaExport::LuaExportStart: SetCommand
 #00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BC89F0
 
-import sys,socket,string,pygame,math,time,gc,pprint
+import sys,socket,string,pygame,math,time,gc,pprint,threading
 from collections import defaultdict
 
+gau_lock=threading.Lock()
+gau_updated=threading.Event()
 gau=defaultdict(int)
+gau_old=defaultdict(int)
 gau_text={}
+
 
 def conv_nonlinear(table,value):
     for i in range(len(table)-1):
@@ -187,9 +191,9 @@ class temp_gauge(gauges):
     #566 eng1_tenth & 567 eng2_tenth = no data
     def check_draw(self):
         self.val['eng1']=135+270*gau[133]
-        self.val['eng1_tenth']=90+(1200*gau[133])%100
+        self.val['eng1_tenth']=90+((1200*gau[133])%100)*3.6
         self.val['eng2']=135+270*gau[134]
-        self.val['eng2_tenth']=90+(1200*gau[134])%100
+        self.val['eng2_tenth']=90+((1200*gau[134])%100)*3.6
         if self.check():
             window.blit(self.bg,self.origin)
             self.draw_needle((self.x+44,self.y+71),self.val['eng1'],self.color['white'],self.radius)
@@ -353,7 +357,7 @@ class hsi_gauge(gauges):
                 window.blit(self.l,self.origin)
 
 class lamps_class:
-    #63 nose up,59 lef gear,61 right gear, 48 lower gear warn lamp but didn't saw it in copkit
+    #63 nose up,59 lef gear,61 right gear, 48 lower gear warn lamp but I didn't saw it in copkit
 
     #                   0=green,        1=yellow,       2=white-green,  3=red,          4=black,    5=landing gear  6=lit buttons
     bg_color=(          (0,30,0),       (30,30,0),      (25,30,25),     (30,0,0),       (0,0,0),    (60,0,0),       (1,39,51))
@@ -374,9 +378,9 @@ class lamps_class:
     [[175,0,"auto",0,"hover"],[176,0,"next",0,"wp"],[173,0,"cannon",0,""],[204,0,"agb",0,"oil press"],[179,1,"hms",1,"fail"],[212,0,"inverter",0,"on"],[207,1,"lh power",1,"set lim"],[208,1,"rh power",1,"set lim"],[185,0,"lh outer",0,"tank pump"],[186,0,"rh outer",0,"tank pump"],[84,3,"main",3,"grbx"],[85,3,"fire",3,""],[86,3,"iff",3,"fail"]],
     [[172,0,"auto",0,"descent"],[166,0,"route",0,"end"],[177,0,"cannon",0,"v"],[213,0,"sl-hook",0,"open"],[188,1,"hud",1,"no ready"],[205,1,"skval",1,"fail"],[183,0,"rotor",0,"anti-ice"],[184,0,"wndshld",0,"heater"],[202,0,"lh inner",0,"tank pump"],[203,0,"rh inner",0,"tank pump"],[46,1,"rotor",1,"rpm"],[44,3,"master",3,"warning"],[2222,4,"",4,""]],
     [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[def_na,4,"",4,""],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]],
-    [[2001,0,"store",0,""],[2002,0,"remain",0,""],[2003,0,"rnds",0,""],[60,5,"lnd gear",5,"left"],[64,5,"lnd gear",5,"nose"],[62,5,"lnd gear",5,"right"],[586,0,"ext ac",0,"pwr"],[261,0,"ext dc",0,"pwr"],[def_radio,2,"r-800",2,""],[3001,2,"spu-9",2,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]],
-    [[def_na,4,"",4,""],[def_na,4,"",4,""],[437,6,"auto",6,"turn"],[439,6,"a/a",6,"h o"],[441,6,"reset",6,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]],
-    [[def_na,4,"",4,""],[def_na,4,"",4,""],[438,6,"a/a",6,""],[440,6,"mov",6,"gnd tgt"],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]]
+    [[2001,0,"store",0,""],[2002,0,"remain",0,""],[2003,0,"rnds",0,""],[60,5,"lnd gear",5,"left"],[64,5,"lnd gear",5,"nose"],[62,5,"lnd gear",5,"right"],[586,0,"ext ac",0,"pwr"],[261,0,"ext dc",0,"pwr"],[def_radio,2,"r-800",2,""],[428,2,"spu-9",2,""],[357,2,"adf",2,""],[371,2,"r-828",2,""],[def_na,4,"",4,""]],
+    [[def_na,4,"",4,""],[def_na,4,"",4,""],[437,6,"auto",6,"turn"],[439,6,"a/a",6,"h o"],[441,6,"reset",6,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[330,6,"bank",6,"hold"],[331,6,"pitch",6,"hold"],[def_na,4,"",4,""],[334,6,"FD",6,"AP"]],
+    [[def_na,4,"",4,""],[def_na,4,"",4,""],[438,6,"a/a",6,""],[440,6,"mov",6,"gnd tgt"],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[332,6,"hdg",6,"hold"],[333,6,"alt",6,"hold"],[def_na,4,"",4,""],[def_na,4,"",4,""]]
     ]
 
     rows=len(mesh)
@@ -394,14 +398,15 @@ class lamps_class:
         for r in range(self.rows):
             for c in range(self.cols):
                 rec=self.mesh[r][c]
+                key=rec[0]
 
-                if rec[0]==6:                       #dynamic update of APU temperature #6 values in the lamp box
+                if key==6:                       #dynamic update of APU temperature #6 values in the lamp box
                     temperature=int(900*gau[6])
                     if temperature==0:
                         turn_off_once=True
                     rec[4]=str(temperature)
 
-                if rec[0]==2001:                    #dynamic update of weapons type and remaining rounds/storages
+                if key==2001:                    #dynamic update of weapons type and remaining rounds/storages
                     if gau[2002]>-1:
                         #StationTypes = {["9A4172"] = "NC", ["S-8KOM"] = "HP", ["S-13"] = "HP", ["UPK-23-250"] = "NN", ["AO-2.5RT"] = "A6", ["PTAB-2.5KO"] = "A6", ["FAB-250"] = "A6", ["FAB-500"] = "A6" }
                         if gau_text.has_key(2001):
@@ -412,16 +417,10 @@ class lamps_class:
 
                         turn_on_once=True
 
-#                if rec[0]==2002 or rec[0]==2003:    #same as above
-#                    rec[4]=str(int(gau[rec[0]]))
+                if key==2002 or key==2003:    #same as above
+                    rec[4]=str(int(gau[key]))
 
-                if rec[0]==2002:                    #same as above
-                    rec[4]=str(int(gau[rec[0]]))
-
-                if rec[0]==2003:                    #same as above
-                    rec[4]=str(int(gau[rec[0]]))
-
-                if rec[0]==self.def_radio:               #displaying radio freq
+                if key==self.def_radio:          #displaying radio freq
                     turn_on_once=True
                     tmp=round(gau[577]*23)+10
                     if tmp>14:
@@ -430,14 +429,20 @@ class lamps_class:
 
                     rec[4]=str(round(tmp,3))
 
-                if rec[0]==3001:
+                if key==428:
                     radio_text={0:'vhf2',1:'vhf1',2:'sw',3:'grn crw'}
                     turn_on_once=True
-                    rec[4]=radio_text[gau[rec[0]]]
+                    rec[4]=radio_text[int(gau[key]*10)]
 
+                if key==357:
+                    turn_on_once=True
+                    rec[4]=str((int(gau[key]*10)+9)%10)
 
+                if key==371:
+                    turn_on_once=True
+                    rec[4]=str(int(gau[key]*10)+1)
 
-                if (gau[rec[0]]>0 and not turn_off_once) or force or turn_on_once:
+                if (gau[key]>0 and not turn_off_once) or force or turn_on_once:
                     pygame.draw.rect(window,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
 
                     text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
@@ -477,12 +482,59 @@ class ekran_class:
 #            window.blit(self.f.render(text[2],1,self.color),(self.x,self.y+25))
 #            window.blit(self.f.render(text[3],1,self.color),(self.x,self.y+50))
 
+class update_data_class(threading.Thread):
+    def run(self):
+        udp_ip="192.168.1.8"
+        udp_port=9089
+
+        sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        sock.bind( (udp_ip,udp_port) )
+
+        while True:
+            #key ids 2001 type of weapon store,2002 remaining rounds of that store, 2003 remaining HP/AP cannon rounds,2004 ekran= \n + 3x rows of text
+            data,addr=sock.recvfrom(1024)
+
+            gau_lock.acquire()
+
+            tmp=string.split(data[9:-1],":")
+            for rec in tmp:
+                key,val=string.split(rec,"=")
+                key=int(key)
+
+#                if key>2999 or key==581 or key==375:
+#                    print rec
+
+                try:
+                    val=float(val)
+                    gau[key]=val
+
+                except:
+                    #text values which i prefer to have number storage too
+                    if key==2002:
+                        gau[key]=-1
+
+                    #all other values
+#                    print str(key)+' = '+val
+                    gau_text[key]=val
+
+            gau_updated.set()
+            gau_lock.release()
+
+
+#'{:*^30}'.format('centered')
+#sys.stdout.write(str('{0:{width}{key}}='.format(key=key,val=gau[key])))
+
 
 gauge_small=153
 gauge_big=192
 
 pygame.init()
+
+pygame.display.set_caption("pyHelios lite KA-50")
+icon=pygame.image.load('img/icon.png')
+pygame.display.set_icon(icon)
 window=pygame.display.set_mode((768,650))
+
 
 lamps=lamps_class()
 
@@ -506,45 +558,32 @@ ekran=ekran_class(hsi.next_right)
 
 pygame.display.flip()
 
-udp_ip="192.168.1.8"
-udp_port=9089
-
-sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-sock.bind( (udp_ip,udp_port) )
-
-#2001,2002,2004 ekran \n+3riadky,
+gatherer=update_data_class()
+gatherer.start()
 
 while True:
-    data,addr=sock.recvfrom(1024)
-    tmp=string.split(data[9:-1],":")
-    for rec in tmp:
-        key,val=string.split(rec,"=")
-        key=int(key)
 
-        if key>2999 or key==581 or key==375:
-            print rec
+    if True:
+        gau_lock.acquire()
+        count=0
+        print 'Debug output of variables'
+        for key in gau.keys() :
+            count=count+1
+            color='\033[1m\033[34m'
+            if not gau_old[key]==gau[key]:
+                color='\033[0m\033[34m'
 
-        try:
-            val=float(val)
-            gau[key]=val
-#            if key>2000:
-#                pprint.pprint(rec)
+            sys.stdout.write('\033[36m'+str(key).zfill(5)+'='+color+str(gau[key]).zfill(7)+'\033[0m'+'\t')
+            if (count%7==0):
+                sys.stdout.write('\n')
 
-        except:
-            #text values which i prefer to have number storage
-#           if key==2002 or key==2001:
-            if key==2002:
-                gau[key]=-1
+            gau_old[key]=gau[key]
 
-            #all other values
-            print str(key)+' = '+val
-#            pprint.pprint(val)
-            gau_text[key]=val
+        sys.stdout.write('\n')
+        gau_lock.release()
 
-
-
-#        print str(key)+'='+str(gau[key])
-#        print gau[24]
+    gau_updated.wait()
+    gau_lock.acquire()
 
     for obj in gc.get_objects():
         if isinstance(obj,gauges):
@@ -552,5 +591,8 @@ while True:
 
     lamps.draw()
     ekran.draw()
+
+    gau_lock.release()
+    gau_updated.clear()
 
     pygame.display.flip()
