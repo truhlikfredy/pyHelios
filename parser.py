@@ -530,21 +530,15 @@ class debug_class:
     def  __init__(self,cols=8,force_always=True,force_count=0):
         self.cols=cols
         self.force_always=force_always
-        self.force_count_def=force_count
         self.force_count=force_count
 
         self.gau_old=defaultdict(int)
         self.gau_count=defaultdict(int)
 
 
-    def enable_count(self,count):
-        self.force_always=False
-        self.force_count_def=count
-        self.force_count=count
-
     def print_out(self):
         gau_lock.acquire()
-        os.system('clear')                  #ms system os.system('CLS')
+#        os.system('clear')                  #ms system os.system('CLS')
         cols=0
         print 'Debug output of variables'
         for key in sorted(gau.keys()) :
@@ -554,10 +548,13 @@ class debug_class:
             if self.gau_old[key]!=gau[key]:
                 self.gau_count[key]=self.force_count
             else:
-                if self.gau_count[key]>0:
-                    self.gau_count[key]=self.gau_count[key]-1
-                else:
+                if self.force_always:
                     refresh=False
+                else:
+                    if self.gau_count[key]>0:
+                        self.gau_count[key]=self.gau_count[key]-1
+                    else:
+                        refresh=False
 
             if refresh:
                 key_color='\033[0m\033[31m'
@@ -632,14 +629,12 @@ pygame.display.flip()
 
 
 gatherer=update_data_class()
-gatherer.start()
 
-debug=debug_class()
-debug.enable_count(40)
+#debug=debug_class(8,False,40)
 
 while True:
 
-    debug.print_out()
+#    debug.print_out()
 
     gau_updated.wait()
     gau_lock.acquire()
