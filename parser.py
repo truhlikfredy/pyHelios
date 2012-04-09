@@ -39,7 +39,7 @@
 #00030.546 DEBUG   LuaExport::LuaExportStart: SetCommand
 #00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BC89F0
 
-import os,sys,socket,string,pygame,math,time,gc,pprint,threading
+import os,sys,socket,string,pygame,math,time,gc,pprint,threading,profile
 from collections import defaultdict
 
 rotate=0
@@ -484,6 +484,18 @@ class ekran_class:
 #            where.blit(self.f.render(text[2],1,self.color),(self.x,self.y+25))
 #            where.blit(self.f.render(text[3],1,self.color),(self.x,self.y+50))
 
+def draw_all():
+    for obj in gc.get_objects():
+        if isinstance(obj,gauges):
+            obj.check_draw()
+
+    lamps.draw()
+    ekran.draw()
+
+    if rotate>0:
+        window.blit(pygame.transform.rotate(where,rotate),(0,0))
+
+
 class update_data_class(threading.Thread):
     def run(self):
         udp_ip="192.168.1.8"
@@ -630,18 +642,8 @@ while True:
 
     gau_updated.wait()
     gau_lock.acquire()
-
-    for obj in gc.get_objects():
-        if isinstance(obj,gauges):
-            obj.check_draw()
-
-    lamps.draw()
-    ekran.draw()
-
+    profile.run('draw_all()')
     gau_lock.release()
     gau_updated.clear()
-
-    if rotate>0:
-        window.blit(pygame.transform.rotate(where,rotate),(0,0))
 
     pygame.display.flip()
