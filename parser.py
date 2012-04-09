@@ -48,6 +48,7 @@ resolution=(768,650)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
+gau_old=defaultdict(int)
 gau_text={}
 
 
@@ -61,6 +62,7 @@ def conv_nonlinear(table,value):
 
 class gauges:
     color={'white':(255,255,255),'red':(255,150,150),'red+':(255,100,100),'red++':(255,50,50),'red+++':(255,0,0),'green':(150,255,150),'green+':(100,255,100),'grey':(100,100,100)}
+    instances=[]
 
     def __init__(self,bg,origin,size,radius=None,draw_on_init=True):
         if radius==None:
@@ -82,8 +84,11 @@ class gauges:
         self.radius=radius
         self.center=(self.x+self.size/2,self.y+self.size/2)
 
+        self.instances.append(self)
+
         if draw_on_init==True:
             self.check_draw()
+
 
     def rotate(self,what,angle):
         tmp=pygame.transform.rotozoom(what,angle,1)
@@ -485,9 +490,14 @@ class ekran_class:
 #            where.blit(self.f.render(text[3],1,self.color),(self.x,self.y+50))
 
 def draw_all():
-    for obj in gc.get_objects():
-        if isinstance(obj,gauges):
-            obj.check_draw()
+#    for obj in gc.get_objects():
+#        if isinstance(obj,gauges):
+#            obj.check_draw()
+
+#    print gauges.instances
+
+    for obj in gauges.instances:
+        obj.check_draw()
 
     lamps.draw()
     ekran.draw()
@@ -543,7 +553,6 @@ class debug_class:
         self.cols=cols
         self.force_count=force_count
 
-        self.gau_old=defaultdict(int)
         self.gau_count=defaultdict(int)
 
     def print_out(self):
@@ -555,7 +564,7 @@ class debug_class:
             cols=cols+1
             refresh=True
 
-            if self.gau_old[key]!=gau[key]:
+            if gau_old[key]!=gau[key]:
                 self.gau_count[key]=self.force_count
             else:
                 if self.gau_count[key]>0:
@@ -574,8 +583,6 @@ class debug_class:
             sys.stdout.write(key_color+str(key).rjust(5,' ')+'='+val_color+str(gau[key]).ljust(7,' ')+'\033[0m'+' ')
             if (cols%self.cols==0):
                 sys.stdout.write('\n')
-
-            self.gau_old[key]=gau[key]
 
         sys.stdout.write('\n')
         gau_lock.release()
@@ -642,7 +649,12 @@ while True:
 
     gau_updated.wait()
     gau_lock.acquire()
+
     profile.run('draw_all()')
+
+    for key in gau.keys():
+        gau_old[key]=gau[key]
+
     gau_lock.release()
     gau_updated.clear()
 
