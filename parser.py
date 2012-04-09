@@ -527,14 +527,12 @@ class update_data_class(threading.Thread):
 #sys.stdout.write(str('{0:{width}{key}}='.format(key=key,val=gau[key])))
 
 class debug_class:
-    def  __init__(self,cols=8,force_always=True,force_count=0):
+    def  __init__(self,cols=8,force_count=0):
         self.cols=cols
-        self.force_always=force_always
         self.force_count=force_count
 
         self.gau_old=defaultdict(int)
         self.gau_count=defaultdict(int)
-
 
     def print_out(self):
         gau_lock.acquire()
@@ -548,13 +546,10 @@ class debug_class:
             if self.gau_old[key]!=gau[key]:
                 self.gau_count[key]=self.force_count
             else:
-                if self.force_always:
-                    refresh=False
+                if self.gau_count[key]>0:
+                    self.gau_count[key]=self.gau_count[key]-1
                 else:
-                    if self.gau_count[key]>0:
-                        self.gau_count[key]=self.gau_count[key]-1
-                    else:
-                        refresh=False
+                    refresh=False
 
             if refresh:
                 key_color='\033[0m\033[31m'
@@ -626,8 +621,8 @@ pygame.display.flip()
 gatherer=update_data_class()
 gatherer.start()
 
-debug=debug_class()                 #will highlight changes just for a frame
-#debug=debug_class(8,False,40)      #will highlight changes for 40 frames
+#debug=debug_class()                 #will highlight changes just for a frame
+debug=debug_class(8,40)             #will highlight changes for 40 frames
 
 while True:
 
