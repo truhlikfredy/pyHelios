@@ -42,6 +42,9 @@
 import sys,socket,string,pygame,math,time,gc,pprint,threading
 from collections import defaultdict
 
+rotate=0
+resolution=(768,650)
+#resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
@@ -86,7 +89,7 @@ class gauges:
     def rotate(self,what,angle):
         tmp=pygame.transform.rotozoom(what,angle,1)
         w,h=tmp.get_size()
-        window.blit(tmp,(self.x+self.instr_x-w/2,self.y+self.instr_y-h/2))
+        where.blit(tmp,(self.x+self.instr_x-w/2,self.y+self.instr_y-h/2))
 
     def draw_needle(self,center,angle,color,size_x=None,size_y=None):
         if center==None:
@@ -104,10 +107,10 @@ class gauges:
             off_x=math.cos((angle+90)*math.pi/180)*l*0.5
             off_y=math.sin((angle+90)*math.pi/180)*l*0.5
             point=math.fabs(l)*2
-            pygame.draw.aaline(window,color,(center_x+off_x,center_y+off_y),(center_x+off_x+math.cos(angle*math.pi/180)*(size_x-point),center_y+off_y+math.sin(angle*math.pi/180)*(size_y-point)))
+            pygame.draw.aaline(where,color,(center_x+off_x,center_y+off_y),(center_x+off_x+math.cos(angle*math.pi/180)*(size_x-point),center_y+off_y+math.sin(angle*math.pi/180)*(size_y-point)))
 
     def draw_gauge(self,size_needle,angle1,angle2=None):
-        window.blit(self.bg,self.origin)
+        where.blit(self.bg,self.origin)
         color1=self.color['white']
         if angle2:
             self.draw_needle(None,angle2,self.color['red'],size_needle)
@@ -195,7 +198,7 @@ class temp_gauge(gauges):
         self.val['eng2']=135+270*gau[134]
         self.val['eng2_tenth']=90+((1200*gau[134])%100)*3.6
         if self.check():
-            window.blit(self.bg,self.origin)
+            where.blit(self.bg,self.origin)
             self.draw_needle((self.x+44,self.y+71),self.val['eng1'],self.color['white'],self.radius)
             self.draw_needle((self.x+44,self.y+102),self.val['eng1_tenth'],self.color['white'],self.radius-5)
             self.draw_needle((self.x+106,self.y+71),self.val['eng2'],self.color['white'],self.radius)
@@ -213,13 +216,13 @@ class clock_gauge(gauges):
         self.val['sw_sec']=270+360*gau[532]
 
         if self.check():
-            window.blit(self.bg,self.origin)
+            where.blit(self.bg,self.origin)
 
-            pygame.draw.rect(window,self.color['grey'],(self.x+73,self.y+51,8,8))
+            pygame.draw.rect(where,self.color['grey'],(self.x+73,self.y+51,8,8))
             if (self.val['flight_status']==0.1):
-                pygame.draw.rect(window,self.color['red+'],(self.x+73,self.y+51,8,8))
+                pygame.draw.rect(where,self.color['red+'],(self.x+73,self.y+51,8,8))
             elif (self.val['flight_status']==0.2):
-                pygame.draw.rect(window,self.color['red+'],(self.x+73+4,self.y+51,4,8))
+                pygame.draw.rect(where,self.color['red+'],(self.x+73+4,self.y+51,4,8))
 
             self.draw_needle(None,self.val['hours'],self.color['white'],45)
             self.draw_needle(None,self.val['min'],self.color['red+'],50)
@@ -243,9 +246,9 @@ class radar_gauge(gauges):
         if self.check_draw_default():
             self.draw_needle(None,self.val['danger']    ,self.color['red+'],self.radius-5)
             if self.val['danger_lamp']==1:
-                pygame.draw.circle(window,self.color['red+++'],(self.x+self.size-15,self.y+self.size-15),15)
+                pygame.draw.circle(where,self.color['red+++'],(self.x+self.size-15,self.y+self.size-15),15)
             if self.val['flag']>0:
-                pygame.draw.circle(window,self.color['red++'],self.center,25)
+                pygame.draw.circle(where,self.color['red++'],self.center,25)
 
 class adi_gauge(gauges):
     #not all informations are displaying, but it's in just very rare cases when they are needed and are not in the default values
@@ -273,13 +276,13 @@ class adi_gauge(gauges):
         if self.check():
             tmp=pygame.Surface((self.size,self.size))
             tmp.blit(self.horisont,(0,-self.val['pitch']))
-            window.blit(tmp,self.origin)
-            window.blit(self.bg,self.origin)
+            where.blit(tmp,self.origin)
+            where.blit(self.bg,self.origin)
 
             self.rotate(self.wings,-self.val['roll'])
 
             w,h=self.ball.get_size()
-            window.blit(self.ball,(self.x+self.instr_x+self.val['sideslip']*16-w/2,self.y+self.ball_y-h/2))
+            where.blit(self.ball,(self.x+self.instr_x+self.val['sideslip']*16-w/2,self.y+self.ball_y-h/2))
 
 class hsi_gauge(gauges):
     #not sure if data for these:
@@ -326,35 +329,35 @@ class hsi_gauge(gauges):
         self.val['course_na_flag']=gau[121]
 
         if self.check():
-            window.blit(self.hover_back,self.origin)
+            where.blit(self.hover_back,self.origin)
 
             #i want to have 55 but at moment the graphics layers are not ready for it so it will be 22
             tmp=pygame.Surface((self.size,self.size),0,self.hover_cross)
             tmp.blit(self.hover_cross,(self.val['late_dev']*22,-self.val['long_dev']*22))
-            window.blit(tmp,self.origin)
+            where.blit(tmp,self.origin)
 
             self.rotate(self.compas,self.val['heading']*360)
             self.rotate(self.rmi,-self.val['bearing']*360)
             self.rotate(self.dta,(self.val['heading']-self.val['cmd_course'])*360)
 
-            window.blit(self.bg,self.origin)
+            where.blit(self.bg,self.origin)
 
             self.rotate(self.dh,(self.val['heading']-self.val['cmd_heading'])*360)
 
             text=self.font.render(str(int(self.val['cmd_course']*360)),1,self.color['white'])
-            window.blit(text,(self.x+146,self.y+18))
+            where.blit(text,(self.x+146,self.y+18))
 
             text=self.font.render(str(int(self.val['range_units']*10)),1,self.color['white'])
-            window.blit(text,(self.x+17,self.y+18))
+            where.blit(text,(self.x+17,self.y+18))
 
             if self.val['heading_flag']==1:
-                window.blit(self.kc,self.origin)
+                where.blit(self.kc,self.origin)
 
             if self.val['course_flag']==1:
-                window.blit(self.k,self.origin)
+                where.blit(self.k,self.origin)
 
             if self.val['course_na_flag']==1:
-                window.blit(self.l,self.origin)
+                where.blit(self.l,self.origin)
 
 class lamps_class:
     #63 nose up,59 lef gear,61 right gear, 48 lower gear warn lamp but I didn't saw it in copkit
@@ -443,18 +446,18 @@ class lamps_class:
                     rec[4]=str(int(gau[key]*10)+1)
 
                 if (gau[key]>0 and not turn_off_once) or force or turn_on_once:
-                    pygame.draw.rect(window,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
+                    pygame.draw.rect(where,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
 
                     text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
                     w,h=text.get_size()
-                    window.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
+                    where.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
 
                     text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
                     w,h=text.get_size()
-                    window.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
+                    where.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
                     turn_on_once=False
                 else:
-                    pygame.draw.rect(window,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
+                    pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
                     turn_off_once=False
 
 class ekran_class:
@@ -468,19 +471,19 @@ class ekran_class:
         self.draw()
 
     def  draw(self):
-#        window.blit(self.f.render(gau[2004],1,self.color),self.origin)
+#        where.blit(self.f.render(gau[2004],1,self.color),self.origin)
          if gau_text.has_key(2004):
             text=gau_text[2004].split('\n')
             if len(text)==4:
-                pygame.draw.rect(window,(0,0,0),(self.x,self.y,self.w,self.h))
+                pygame.draw.rect(where,(0,0,0),(self.x,self.y,self.w,self.h))
                 off=0
                 for txt in text:
                     line=self.f.render(txt,1,self.color)
-                    window.blit(line,(self.x,self.y+off))
+                    where.blit(line,(self.x,self.y+off))
                     w,h=line.get_size()
                     off=off+h
-#            window.blit(self.f.render(text[2],1,self.color),(self.x,self.y+25))
-#            window.blit(self.f.render(text[3],1,self.color),(self.x,self.y+50))
+#            where.blit(self.f.render(text[2],1,self.color),(self.x,self.y+25))
+#            where.blit(self.f.render(text[3],1,self.color),(self.x,self.y+50))
 
 class update_data_class(threading.Thread):
     def run(self):
@@ -533,7 +536,18 @@ pygame.init()
 pygame.display.set_caption("pyHelios lite KA-50")
 icon=pygame.image.load('img/icon.png')
 pygame.display.set_icon(icon)
-window=pygame.display.set_mode((768,650))
+
+x,y=resolution
+
+if rotate>0:
+    y,x=resolution
+
+#window=pygame.display.set_mode((x,y),pygame.FULLSCREEN)
+window=pygame.display.set_mode((x,y))
+where=window
+
+if rotate>0:
+    where=pygame.Surface(resolution)
 
 
 lamps=lamps_class()
@@ -556,7 +570,11 @@ hsi=hsi_gauge('img/hsi-top.png',radar.next_right,gauge_big)
 ekran=ekran_class(hsi.next_right)
 
 
+if rotate>0:
+    window.blit(pygame.transform.rotate(where,rotate),(0,0))
+
 pygame.display.flip()
+
 
 gatherer=update_data_class()
 gatherer.start()
@@ -594,5 +612,8 @@ while True:
 
     gau_lock.release()
     gau_updated.clear()
+
+    if rotate>0:
+        window.blit(pygame.transform.rotate(where,rotate),(0,0))
 
     pygame.display.flip()
