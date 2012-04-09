@@ -629,6 +629,7 @@ pygame.display.flip()
 
 
 gatherer=update_data_class()
+gatherer.start()
 
 #debug=debug_class(8,False,40)
 
