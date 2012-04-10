@@ -397,7 +397,7 @@ class lamps_class:
         self.next_right=(self.width*self.cols,self.height)
         self.next_row=(0,self.height*self.rows-self.offset)
         self.sf=pygame.font.Font(None,14)
-        self.first_time=True
+        self.first_time=2
         self.draw(True)
 
     def draw(self,force=False):
@@ -408,7 +408,7 @@ class lamps_class:
                 rec=self.mesh[r][c]
                 key=rec[0]
 
-                if gau_old[key]!=gau[key] or key==2001 or self.first_time:
+                if gau_old[key]!=gau[key] or key==2001 or self.first_time>0:
 
                     if key==6:                       #dynamic update of APU temperature #6 values in the lamp box
                         temperature=int(900*gau[key])
@@ -467,7 +467,7 @@ class lamps_class:
                         pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
                         turn_off_once=False
 
-        self.first_time=False
+        self.first_time-=1
 
 class ekran_class:
     color=(239,171,1)
