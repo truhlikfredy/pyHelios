@@ -42,9 +42,9 @@
 import os,sys,socket,string,pygame,math,time,gc,pprint,threading,profile
 from collections import defaultdict
 
-rotate=0
-resolution=(768,650)
-#resolution=(768,1024)
+rotate=90
+#resolution=(768,650)
+resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
@@ -562,7 +562,7 @@ class debug_class:
         cols=0
         print 'Debug output of variables'
         for key in sorted(gau.keys()) :
-            cols=cols+1
+            cols+=1
             refresh=True
 
             if gau_old[key]!=gau[key]:
