@@ -407,62 +407,64 @@ class lamps_class:
                 rec=self.mesh[r][c]
                 key=rec[0]
 
-                if key==6:                       #dynamic update of APU temperature #6 values in the lamp box
-                    temperature=int(900*gau[6])
-                    if temperature==0:
-                        turn_off_once=True
-                    rec[4]=str(temperature)
+                if gau_old[key]!=gau[key] or key==2001:
 
-                if key==2001:                    #dynamic update of weapons type and remaining rounds/storages
-                    if gau[2002]>-1:
-                        #StationTypes = {["9A4172"] = "NC", ["S-8KOM"] = "HP", ["S-13"] = "HP", ["UPK-23-250"] = "NN", ["AO-2.5RT"] = "A6", ["PTAB-2.5KO"] = "A6", ["FAB-250"] = "A6", ["FAB-500"] = "A6" }
-                        if gau_text.has_key(2001):
-                            if gau_text[2001]==" ":
-                                rec[4]='HP'
-                            else:
-                                rec[4]=gau_text[2001]
+                    if key==6:                       #dynamic update of APU temperature #6 values in the lamp box
+                        temperature=int(900*gau[key])
+                        if temperature==0:
+                            turn_off_once=True
+                        rec[4]=str(temperature)
 
+                    if key==2001:                    #dynamic update of weapons type and remaining rounds/storages
+                        if gau[2002]>-1:
+                            #StationTypes = {["9A4172"] = "NC", ["S-8KOM"] = "HP", ["S-13"] = "HP", ["UPK-23-250"] = "NN", ["AO-2.5RT"] = "A6", ["PTAB-2.5KO"] = "A6", ["FAB-250"] = "A6", ["FAB-500"] = "A6" }
+                            if gau_text.has_key(key):
+                                if gau_text[key]==" ":
+                                    rec[4]='HP'
+                                else:
+                                    rec[4]=gau_text[key]
+
+                            turn_on_once=True
+
+                    if key==2002 or key==2003:    #same as above
+                        rec[4]=str(int(gau[key]))
+
+                    if key==self.def_radio:          #displaying radio freq
                         turn_on_once=True
+                        tmp=round(gau[577]*23)+10
+                        if tmp>14:
+                            tmp=tmp+7
+                        tmp=float(int((tmp+gau[574])*10))+gau[575]+gau[576]/10
 
-                if key==2002 or key==2003:    #same as above
-                    rec[4]=str(int(gau[key]))
+                        rec[4]=str(round(tmp,3))
 
-                if key==self.def_radio:          #displaying radio freq
-                    turn_on_once=True
-                    tmp=round(gau[577]*23)+10
-                    if tmp>14:
-                        tmp=tmp+7
-                    tmp=float(int((tmp+gau[574])*10))+gau[575]+gau[576]/10
+                    if key==428:
+                        radio_text={0:'vhf2',1:'vhf1',2:'sw',3:'grn crw'}
+                        turn_on_once=True
+                        rec[4]=radio_text[int(gau[key]*10)]
 
-                    rec[4]=str(round(tmp,3))
+                    if key==357:
+                        turn_on_once=True
+                        rec[4]=str((int(gau[key]*10)+9)%10)
 
-                if key==428:
-                    radio_text={0:'vhf2',1:'vhf1',2:'sw',3:'grn crw'}
-                    turn_on_once=True
-                    rec[4]=radio_text[int(gau[key]*10)]
+                    if key==371:
+                        turn_on_once=True
+                        rec[4]=str(int(gau[key]*10)+1)
 
-                if key==357:
-                    turn_on_once=True
-                    rec[4]=str((int(gau[key]*10)+9)%10)
+                    if (gau[key]>0 and not turn_off_once) or force or turn_on_once:
+                        pygame.draw.rect(where,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
 
-                if key==371:
-                    turn_on_once=True
-                    rec[4]=str(int(gau[key]*10)+1)
+                        text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
+                        w,h=text.get_size()
+                        where.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
 
-                if (gau[key]>0 and not turn_off_once) or force or turn_on_once:
-                    pygame.draw.rect(where,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
-
-                    text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
-                    w,h=text.get_size()
-                    where.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
-
-                    text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
-                    w,h=text.get_size()
-                    where.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
-                    turn_on_once=False
-                else:
-                    pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
-                    turn_off_once=False
+                        text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
+                        w,h=text.get_size()
+                        where.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
+                        turn_on_once=False
+                    else:
+                        pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
+                        turn_off_once=False
 
 class ekran_class:
     color=(239,171,1)
@@ -556,7 +558,6 @@ class debug_class:
         self.gau_count=defaultdict(int)
 
     def print_out(self):
-        gau_lock.acquire()
         os.system('clear')                  #ms system os.system('CLS')
         cols=0
         print 'Debug output of variables'
@@ -585,7 +586,6 @@ class debug_class:
                 sys.stdout.write('\n')
 
         sys.stdout.write('\n')
-        gau_lock.release()
 
 
 
@@ -644,13 +644,13 @@ gatherer.start()
 debug=debug_class(8,40)             #will highlight changes for 40 frames
 
 while True:
-
-    debug.print_out()
-
     gau_updated.wait()
     gau_lock.acquire()
 
-    profile.run('draw_all()')
+    debug.print_out()
+
+#    profile.run('draw_all()')
+    draw_all()
 
     for key in gau.keys():
         gau_old[key]=gau[key]
