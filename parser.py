@@ -42,9 +42,9 @@
 import os,sys,socket,string,pygame,math,time,gc,pprint,threading,profile
 from collections import defaultdict
 
-rotate=90
-#resolution=(768,650)
-resolution=(768,1024)
+rotate=0
+resolution=(768,650)
+#resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
@@ -397,6 +397,7 @@ class lamps_class:
         self.next_right=(self.width*self.cols,self.height)
         self.next_row=(0,self.height*self.rows-self.offset)
         self.sf=pygame.font.Font(None,14)
+        self.first_time=True
         self.draw(True)
 
     def draw(self,force=False):
@@ -407,7 +408,7 @@ class lamps_class:
                 rec=self.mesh[r][c]
                 key=rec[0]
 
-                if gau_old[key]!=gau[key] or key==2001:
+                if gau_old[key]!=gau[key] or key==2001 or self.first_time:
 
                     if key==6:                       #dynamic update of APU temperature #6 values in the lamp box
                         temperature=int(900*gau[key])
@@ -465,6 +466,8 @@ class lamps_class:
                     else:
                         pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
                         turn_off_once=False
+
+        self.first_time=False
 
 class ekran_class:
     color=(239,171,1)
