@@ -22,7 +22,7 @@
 #START_LASER_DIALOG 		= 10011,
 
 #00030.546 DEBUG   LuaExport::LuaExportStart: (metatable)
-#00030.546 DEBUG   LuaExport::LuaExportStart: __index
+#00030.546 DEBUG   LuaExport::LuaExportStart: __index
 #00030.546 DEBUG   LuaExport::LuaExportStart:   [__index] = (table)
 #00030.546 DEBUG   LuaExport::LuaExportStart: get_frequency
 #00030.546 DEBUG   LuaExport::LuaExportStart:     function: 000000005B3B4EA0
@@ -41,16 +41,18 @@
 
 import os,sys,socket,string,pygame,math,time,gc,pprint,threading,profile
 from collections import defaultdict
+from pygame.locals import *
 
 rotate=0
-resolution=(768,650)
-#resolution=(768,1024)
+#resolution=(768,650)
+resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
 gau_old=defaultdict(int)
 gau_text={}
 
+keep_loop=True
 
 def conv_nonlinear(table,value):
     for i in range(len(table)-1):
@@ -381,7 +383,7 @@ class lamps_class:
     mesh=[
 #    [[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]]
     [[def_na,4,"",4,""],[165,0,"ENR",0,"NAV ON"],[164,0,"AC-POS",0,"CAL-DATA"],[211,0,"X-FEED",0,"VLV OPEN"],[167,0,"MASTER",0,"ARM ON"],[189,1,"computer",1,"diagnose"],[181,2,"lh eng",2,"anti-ice"],[182,2,"rh eng",2,"anti-ice"],[200,2,"fwd tank",0,"pump on"],[201,2,"aft tank",0,"pump on"],[78,3,"lh eng",3,"overspd"],[79,3,"rh eng",3,"overspd"],[80,3,"over-g",3,""]],
-    [[170,0,"r-alt",0,"hold"],[171,0,"enr",0,"course"],[178,3,"weap",3,"arm"],[187,0,"turbo",0,"gear"],[180,0,"weapon",0,"training"],[206,1,"computer",1,"fail"],[190,0,"lh eng",0,"dust-prot"],[191,0,"rh eng",0,"dust-prot"],[209,0,"lh vlv",0,"closed"],[210,0,"rh vlv",0,"closed"],[81,3,"lh eng",3,"vibr"],[82,3,"rh eng",3,"vibr"],[83,3,"ias",3,"max"]],
+    [[170,0,"r-alt",0,"hold"],[171,0,"enr",0,"course"],[178,3,"weap",3,"arm"],[187,0,"turbo",0,"gear"],[180,0,"weapon",0,"training"],[206,1,"computer",1,"fail"],[190,0,"lh eng",0,"dustprot"],[191,0,"rh eng",0,"dustprot"],[209,0,"lh vlv",0,"closed"],[210,0,"rh vlv",0,"closed"],[81,3,"lh eng",3,"vibr"],[82,3,"rh eng",3,"vibr"],[83,3,"ias",3,"max"]],
     [[175,0,"auto",0,"hover"],[176,0,"next",0,"wp"],[173,0,"cannon",0,""],[204,0,"agb",0,"oil press"],[179,1,"hms",1,"fail"],[212,0,"inverter",0,"on"],[207,1,"lh power",1,"set lim"],[208,1,"rh power",1,"set lim"],[185,0,"lh outer",0,"tank pump"],[186,0,"rh outer",0,"tank pump"],[84,3,"main",3,"grbx"],[85,3,"fire",3,""],[86,3,"iff",3,"fail"]],
     [[172,0,"auto",0,"descent"],[166,0,"route",0,"end"],[177,0,"cannon",0,"v"],[213,0,"sl-hook",0,"open"],[188,1,"hud",1,"no ready"],[205,1,"skval",1,"fail"],[183,0,"rotor",0,"anti-ice"],[184,0,"wndshld",0,"heater"],[202,0,"lh inner",0,"tank pump"],[203,0,"rh inner",0,"tank pump"],[46,1,"rotor",1,"rpm"],[44,3,"master",3,"warning"],[2222,4,"",4,""]],
     [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[def_na,4,"",4,""],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]],
@@ -512,42 +514,58 @@ def draw_all():
 
 
 class update_data_class(threading.Thread):
+    def  __init__(self):
+        threading.Thread.__init__(self)
+        self._stop=threading.Event()
+
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
+
     def run(self):
-        udp_ip="192.168.1.8"
+#        udp_ip="192.168.1.8"
+        udp_ip="127.0.0.1"
         udp_port=9089
 
         sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         sock.bind( (udp_ip,udp_port) )
+        sock.setblocking(0)
 
-        while True:
+        while not self.stopped():
             #key ids 2001 type of weapon store,2002 remaining rounds of that store, 2003 remaining HP/AP cannon rounds,2004 ekran= \n + 3x rows of text
-            data,addr=sock.recvfrom(1024)
+            try:
+                data,addr=sock.recvfrom(1024)
 
-            gau_lock.acquire()
+                gau_lock.acquire()
 
-            tmp=string.split(data[9:-1],":")
-            for rec in tmp:
-                key,val=string.split(rec,"=")
-                key=int(key)
+                tmp=string.split(data[9:-1],":")
+                for rec in tmp:
+                    key,val=string.split(rec,"=")
+                    key=int(key)
 
-#                if key>2999 or key==581 or key==375:
-#                    print rec
+#                   if key>2999 or key==581 or key==375:
+#                        print rec
 
-                try:
-                    val=float(val)
-                    gau[key]=val
+                    try:
+                        val=float(val)
+                        gau[key]=val
 
-                except:
-                    #text values which i prefer to have number storage too
-                    if key==2002:
-                        gau[key]=-1
+                    except:
+                        #text values which i prefer to have number storage too
+                        if key==2002:
+                            gau[key]=-1
 
-                    #all other values
-#                    print str(key)+' = '+val
-                    gau_text[key]=val
+                        #all other values
+#                       print str(key)+' = '+val
+                        gau_text[key]=val
 
-            gau_updated.set()
-            gau_lock.release()
+                gau_updated.set()
+                gau_lock.release()
+
+            except:
+                time.sleep(0.01)
 
 
 #'{:*^30}'.format('centered')
@@ -590,7 +608,15 @@ class debug_class:
 
         sys.stdout.write('\n')
 
-
+def end_all():
+    print 'exit'
+    gatherer.stop()
+    loop=False
+#    thread.exit()
+#    gatherer.exit()
+#    gatherer.join()
+#    sys.exit()
+#    SystemExit()
 
 gauge_small=153
 gauge_big=192
@@ -646,19 +672,26 @@ gatherer.start()
 #debug=debug_class()                 #will highlight changes just for a frame
 debug=debug_class(8,40)             #will highlight changes for 40 frames
 
-while True:
-    gau_updated.wait()
-    gau_lock.acquire()
 
-    debug.print_out()
+while keep_loop:
+    for event in pygame.event.get():
+        if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+            keep_loop=False
+            end_all()
 
-#    profile.run('draw_all()')
-    draw_all()
+    if gau_updated.is_set():
+        gau_updated.wait()
+        gau_lock.acquire()
 
-    for key in gau.keys():
-        gau_old[key]=gau[key]
+#        debug.print_out()
 
-    gau_lock.release()
-    gau_updated.clear()
+#       profile.run('draw_all()')
+        draw_all()
 
-    pygame.display.flip()
+        for key in gau.keys():
+            gau_old[key]=gau[key]
+
+        gau_lock.release()
+        gau_updated.clear()
+
+        pygame.display.flip()
