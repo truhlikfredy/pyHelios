@@ -86,7 +86,7 @@ class gauges:
         self.radius=radius
         self.center=(self.x+self.size/2,self.y+self.size/2)
 
-        self.instances.append(self)
+        self.instances.append(self.check_draw)
 
         if draw_on_init==True:
             self.check_draw()
@@ -504,7 +504,7 @@ def draw_all():
 #    print gauges.instances
 
     for obj in gauges.instances:
-        obj.check_draw()
+        obj()
 
     lamps.draw()
     ekran.draw()
