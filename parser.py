@@ -45,13 +45,13 @@ import os,sys,socket,string,pygame,math,time,threading
 from collections import defaultdict
 from pygame.locals import *
 
+NaN=float('nan')
 #resolution=(768,650)
 resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
-gau_na=-6543210.0123456
-gau_old=defaultdict(lambda:float(gau_na))
+gau_old=defaultdict(lambda:NaN)
 gau_text={}
 
 keep_loop=True
@@ -713,20 +713,14 @@ while keep_loop:
             win.rotate()
 
             for key in gau_old.keys():
-                gau_old[key]=gau_old[key]-1
-#                if gau.has_key(key) and gau_old[key]==gau[key]:
-#                    gau_old[key]=not gau[key]
-#                else:
-#                    gau_old[key]=gau_na
-
-
+                gau_old[key]=NaN
             gau_updated.set()
 
         if event.type == KEYDOWN and event.key == K_f:
             win.switch_fullscreen()
 
             for key in gau_old.keys():
-                gau_old[key]=gau_na
+                gau_old[key]=NaN
             gau_updated.set()
 
 
