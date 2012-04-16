@@ -134,7 +134,7 @@ class gauges:
         self.radius=radius
         self.center=(self.x+self.size/2,self.y+self.size/2)
 
-        self.instances.append(self.check_draw)
+        self.instances.append(self)
 
         if draw_on_init==True:
             self.check_draw()
@@ -171,6 +171,14 @@ class gauges:
             color1=self.color['green']
         self.draw_needle(None,angle1,color1,size_needle)
 
+    def set_force_refresh(self):
+        for key in self.val_old.keys():
+            self.val_old[key]=NaN
+
+#    def set_force_refresh_all(self):
+#        for obj in self.instances:
+#            obj.set_force_refresh()
+
     def check(self):
         self.refresh=False
         for key in self.val.keys():
@@ -193,6 +201,10 @@ class gauges:
 
     def check_draw(self):
         self.check_draw_default()
+
+#    def check_draw_all(self):
+#        for obj in self.instances:
+#            obj.check_draw()
 
 
 class vvi_gauge(gauges):
@@ -559,8 +571,9 @@ def draw_all():
 
 #    print gauges.instances
 
+ #   gauges.check_draw_all()
     for obj in gauges.instances:
-        obj()
+        obj.check_draw()
 
     lamps.draw()
     ekran.draw()
@@ -714,6 +727,10 @@ while keep_loop:
 
             for key in gau_old.keys():
                 gau_old[key]=NaN
+
+            for obj in gauges.instances:
+                obj.set_force_refresh()
+
             gau_updated.set()
 
         if event.type == KEYDOWN and event.key == K_f:
@@ -721,6 +738,10 @@ while keep_loop:
 
             for key in gau_old.keys():
                 gau_old[key]=NaN
+
+            for obj in gauges.instances:
+                obj.set_force_refresh()
+
             gau_updated.set()
 
 
