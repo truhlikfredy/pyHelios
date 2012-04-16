@@ -49,7 +49,7 @@ resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
-gau_old=defaultdict(int)
+gau_old=defaultdict(lambda:int(-6543210))
 gau_text={}
 
 keep_loop=True
