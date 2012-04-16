@@ -259,13 +259,17 @@ class radar_gauge(gauges):
 class adi_gauge(gauges):
     #not all informations are displaying, but it's in just very rare cases when they are needed and are not in the default values
     def __init__(self,bg,origin,size,radius=None,draw_on_init=True):
+        gauges.__init__(self,bg,origin,size,radius,False)
+
         self.horisont=pygame.image.load('img/adi-horisont.png')
         self.wings=pygame.image.load('img/adi-wings.png')
         self.ball=pygame.image.load('img/adi-ball.png')
         self.instr_x=76
         self.instr_y=69
         self.ball_y=146
-        gauges.__init__(self,bg,origin,size,radius,draw_on_init)
+
+        if draw_on_init==True:
+            self.check_draw()
 
     def check_draw(self):
         self.val['roll']=180*gau[100]
@@ -299,6 +303,8 @@ class hsi_gauge(gauges):
     #hsi_course_hundreds
     #hsi_course_units
     def __init__(self,bg,origin,size,radius=None,draw_on_init=True):
+        gauges.__init__(self,bg,origin,size,radius,False)
+
         self.compas=pygame.image.load('img/hsi-compas.png')
         self.dta=pygame.image.load('img/hsi-dta.png')
         self.hover_back=pygame.image.load('img/hsi-hover-back.png')
@@ -314,7 +320,9 @@ class hsi_gauge(gauges):
 
         self.font=pygame.font.Font(None,24)
 
-        gauges.__init__(self,bg,origin,size,radius,draw_on_init)
+        if draw_on_init==True:
+            self.check_draw()
+
 
     def check_draw(self):
         self.val['heading']=gau[112]
