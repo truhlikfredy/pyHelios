@@ -39,9 +39,12 @@
 #00030.546 DEBUG   LuaExport::LuaExportStart: SetCommand
 #00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BC89F0
 
-import os,sys,socket,string,pygame,math,time,gc,pprint,threading,profile
+import os,sys,socket,string,pygame,math,time,threading
+#import gc,pprint,profile
+
 from collections import defaultdict
 from pygame.locals import *
+
 
 rotate=0
 #resolution=(768,650)
@@ -573,6 +576,7 @@ class update_data_class(threading.Thread):
                 gau_lock.release()
 
             except:
+#                time.sleep(3)
                 time.sleep(0.01)
 
 
@@ -615,16 +619,6 @@ class debug_class:
                 sys.stdout.write('\n')
 
         sys.stdout.write('\n')
-
-def end_all():
-    print 'exit'
-    gatherer.stop()
-    loop=False
-#    thread.exit()
-#    gatherer.exit()
-#    gatherer.join()
-#    sys.exit()
-#    SystemExit()
 
 gauge_small=153
 gauge_big=192
@@ -684,10 +678,11 @@ debug=debug_class(8,40)             #will highlight changes for 40 frames
 while keep_loop:
     for event in pygame.event.get():
         if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+            gatherer.stop()
+            gatherer.join()
             keep_loop=False
-            end_all()
 
-    if gau_updated.is_set():
+    if gau_updated.is_set() and not gatherer.stopped():
         gau_updated.wait()
         gau_lock.acquire()
 
