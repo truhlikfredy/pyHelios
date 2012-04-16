@@ -45,17 +45,62 @@ import os,sys,socket,string,pygame,math,time,threading
 from collections import defaultdict
 from pygame.locals import *
 
-
-rotate=0
 #resolution=(768,650)
 resolution=(768,1024)
 gau_lock=threading.Lock()
 gau_updated=threading.Event()
 gau=defaultdict(int)
-gau_old=defaultdict(lambda:int(-6543210))
+gau_na=-6543210.0123456
+gau_old=defaultdict(lambda:float(gau_na))
 gau_text={}
 
 keep_loop=True
+
+class window_handling_class():
+    def __init__(self,fullscreen=False,rotate_angle=0):
+        self.fullscreen=fullscreen
+        self.rotate_angle=rotate_angle
+
+        self.set_mode()
+
+    def switch_fullscreen(self):
+        if self.fullscreen:
+            self.fullscreen=False
+        else:
+            self.fullscreen=True
+
+        self.set_mode()
+
+    def rotate(self):
+        self.rotate_angle=(self.rotate_angle+90)%360
+
+        self.set_mode()
+
+    def set_mode(self):
+        global window,where
+
+        if self.rotate_angle==90 or self.rotate_angle==270:
+            y,x=resolution
+        else:
+            x,y=resolution
+
+        if self.fullscreen:
+            window=pygame.display.set_mode((x,y),pygame.FULLSCREEN)
+        else:
+            window=pygame.display.set_mode((x,y))
+
+        if self.rotate_angle>0:
+            where=pygame.Surface(resolution)
+        else:
+            where=window
+
+        print window,where
+
+    def flip(self):
+        if self.rotate_angle>0:
+            window.blit(pygame.transform.rotate(where,self.rotate_angle),(0,0))
+
+        pygame.display.flip()
 
 def conv_nonlinear(table,value):
     for i in range(len(table)-1):
@@ -520,9 +565,7 @@ def draw_all():
     lamps.draw()
     ekran.draw()
 
-    if rotate>0:
-        window.blit(pygame.transform.rotate(where,rotate),(0,0))
-
+    win.flip()
 
 class update_data_class(threading.Thread):
     def  __init__(self):
@@ -536,11 +579,11 @@ class update_data_class(threading.Thread):
         return self._stop.isSet()
 
     def run(self):
-#        udp_ip="192.168.1.8"
+#        udp_ip="192.168.1.8"                       ## nastavitelne IP cez class
         udp_ip="127.0.0.1"
         udp_port=9089
 
-        sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)        ## error ked nebudem moct otvorit ten port
         sock.bind( (udp_ip,udp_port) )
         sock.setblocking(0)
 
@@ -591,7 +634,7 @@ class debug_class:
         self.gau_count=defaultdict(int)
 
     def print_out(self):
-        os.system('clear')                  #ms system os.system('CLS')
+        os.system('clear')                  #ms system os.system('CLS')     ### farby pre ms system robia bordel
         cols=0
         print 'Debug output of variables'
         for key in sorted(gau.keys()) :
@@ -626,21 +669,10 @@ gauge_big=192
 pygame.init()
 
 pygame.display.set_caption("pyHelios lite KA-50")
-icon=pygame.image.load('img/icon.png')
+icon=pygame.image.load('img/icon.png')                  ##spravit iconku win/linux kompatibilnu
 pygame.display.set_icon(icon)
 
-x,y=resolution
-
-if rotate>0:
-    y,x=resolution
-
-#window=pygame.display.set_mode((x,y),pygame.FULLSCREEN)
-window=pygame.display.set_mode((x,y))
-where=window
-
-if rotate>0:
-    where=pygame.Surface(resolution)
-
+win=window_handling_class(False,0)
 
 lamps=lamps_class()
 
@@ -661,12 +693,7 @@ radar=radar_gauge('img/radar.png',vvi.next_right,gauge_big,50)
 hsi=hsi_gauge('img/hsi-top.png',radar.next_right,gauge_big)
 ekran=ekran_class(hsi.next_right)
 
-
-if rotate>0:
-    window.blit(pygame.transform.rotate(where,rotate),(0,0))
-
-pygame.display.flip()
-
+win.flip()
 
 gatherer=update_data_class()
 gatherer.start()
@@ -677,13 +704,33 @@ debug=debug_class(8,40)             #will highlight changes for 40 frames
 
 while keep_loop:
     for event in pygame.event.get():
-        if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+        if event.type == QUIT or (event.type == KEYDOWN and ( event.key == K_ESCAPE or event.key == K_q ) ):
             gatherer.stop()
             gatherer.join()
             keep_loop=False
 
+        if event.type == KEYDOWN and event.key == K_r:
+            win.rotate()
+
+            for key in gau_old.keys():
+                gau_old[key]=gau_old[key]-1
+#                if gau.has_key(key) and gau_old[key]==gau[key]:
+#                    gau_old[key]=not gau[key]
+#                else:
+#                    gau_old[key]=gau_na
+
+
+            gau_updated.set()
+
+        if event.type == KEYDOWN and event.key == K_f:
+            win.switch_fullscreen()
+
+            for key in gau_old.keys():
+                gau_old[key]=gau_na
+            gau_updated.set()
+
+
     if gau_updated.is_set() and not gatherer.stopped():
-        gau_updated.wait()
         gau_lock.acquire()
 
 #        debug.print_out()
@@ -696,5 +743,3 @@ while keep_loop:
 
         gau_lock.release()
         gau_updated.clear()
-
-        pygame.display.flip()
