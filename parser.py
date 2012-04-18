@@ -299,15 +299,16 @@ class clock_gauge(gauges):
             elif (self.val['flight_status']==0.2):
                 pygame.draw.rect(where,self.color['red+'],(self.x+73+4,self.y+51,4,8))
 
-            self.draw_needle(None,self.val['hours'],self.color['white'],45)
-            self.draw_needle(None,self.val['min'],self.color['red+'],50)
-            self.draw_needle(None,self.val['sec'],self.color['green+'],55)
-
-            self.draw_needle((self.x+76,self.y+42),self.val['flight_hours'],self.color['white'],self.radius)
             self.draw_needle((self.x+76,self.y+42),self.val['flight_min'],self.color['red+'],self.radius-2)
+            self.draw_needle((self.x+76,self.y+42),self.val['flight_hours'],self.color['white'],self.radius)
 
-            self.draw_needle((self.x+76,self.y+110),self.val['sw_min'],self.color['red+'],self.radius)
             self.draw_needle((self.x+76,self.y+110),self.val['sw_sec'],self.color['green+'],self.radius-2)
+            self.draw_needle((self.x+76,self.y+110),self.val['sw_min'],self.color['red+'],self.radius)
+
+            self.draw_needle(None,self.val['sec'],self.color['green+'],55)
+            self.draw_needle(None,self.val['min'],self.color['red+'],50)
+            self.draw_needle(None,self.val['hours'],self.color['white'],45)
+
 
 class radar_gauge(gauges):
     #default danger 0.6090
@@ -463,10 +464,10 @@ class lamps_class:
     [[170,0,"r-alt",0,"hold"],[171,0,"enr",0,"course"],[178,3,"weap",3,"arm"],[187,0,"turbo",0,"gear"],[180,0,"weapon",0,"training"],[206,1,"computer",1,"fail"],[190,0,"lh eng",0,"dustprot"],[191,0,"rh eng",0,"dustprot"],[209,0,"lh vlv",0,"closed"],[210,0,"rh vlv",0,"closed"],[81,3,"lh eng",3,"vibr"],[82,3,"rh eng",3,"vibr"],[83,3,"ias",3,"max"]],
     [[175,0,"auto",0,"hover"],[176,0,"next",0,"wp"],[173,0,"cannon",0,""],[204,0,"agb",0,"oil press"],[179,1,"hms",1,"fail"],[212,0,"inverter",0,"on"],[207,1,"lh power",1,"set lim"],[208,1,"rh power",1,"set lim"],[185,0,"lh outer",0,"tank pump"],[186,0,"rh outer",0,"tank pump"],[84,3,"main",3,"grbx"],[85,3,"fire",3,""],[86,3,"iff",3,"fail"]],
     [[172,0,"auto",0,"descent"],[166,0,"route",0,"end"],[177,0,"cannon",0,"v"],[213,0,"sl-hook",0,"open"],[188,1,"hud",1,"no ready"],[205,1,"skval",1,"fail"],[183,0,"rotor",0,"anti-ice"],[184,0,"wndshld",0,"heater"],[202,0,"lh inner",0,"tank pump"],[203,0,"rh inner",0,"tank pump"],[46,1,"rotor",1,"rpm"],[44,3,"master",3,"warning"],[2222,4,"",4,""]],
-    [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[def_na,4,"",4,""],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]],
+    [[237,3,"fire",3,"lh eng"],[239,3,"fire",3,"apu"],[568,3,"fire",3,"hydr"],[241,3,"fire",3,"rh eng"],[243,3,"fire",3,"grbx"],[244,3,"1",3,""],[245,3,"2",3,""],[163,2,"start",2,"vlv"],[6,2,"apu tmp",2,""],[162,2,"apu vlv",2,"open"],[168,2,"apu oil",2,"press"],[169,2,"apu stop",2,"rpm"],[174,2,"apu",2,"on"]],
     [[2001,0,"store",0,""],[2002,0,"remain",0,""],[2003,0,"rnds",0,""],[60,5,"lnd gear",5,"left"],[64,5,"lnd gear",5,"nose"],[62,5,"lnd gear",5,"right"],[586,0,"ext ac",0,"pwr"],[261,0,"ext dc",0,"pwr"],[def_radio,2,"r-800",2,""],[428,2,"spu-9",2,""],[357,2,"adf",2,""],[371,2,"r-828",2,""],[def_na,4,"",4,""]],
-    [[def_na,4,"",4,""],[def_na,4,"",4,""],[437,6,"auto",6,"turn"],[439,6,"a/a",6,"h o"],[441,6,"reset",6,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[330,6,"bank",6,"hold"],[331,6,"pitch",6,"hold"],[def_na,4,"",4,""],[334,6,"FD",6,"AP"]],
-    [[def_na,4,"",4,""],[def_na,4,"",4,""],[438,6,"a/a",6,""],[440,6,"mov",6,"gnd tgt"],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[332,6,"hdg",6,"hold"],[333,6,"alt",6,"hold"],[def_na,4,"",4,""],[def_na,4,"",4,""]]
+    [[432,2,"train on",2,"train off",1],[434,2,"hms on",2,"hms off",1],[437,6,"auto",6,"turn"],[439,6,"a/a",6,"h o"],[441,6,"reset",6,""],[403,2,"man",2,"auto",1],[400,2,"burst",2,""],[398,2,"rate low",2,"rate high",1],[261,0,"ext dc",0,"pwr"],[330,6,"bank",6,"hold"],[331,6,"pitch",6,"hold"],[def_na,4,"",4,""],[334,6,"FD",6,"AP"]],
+    [[395,2,"k-04 on",2,"k-04 off",1],[436,2,"at",2,"gs",1],[438,6,"a/a",6,""],[440,6,"mov",6,"gnd tgt"],[435,2,"las on",2,"las off",1],[431,2,"cannon",2,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[586,0,"ext ac",0,"pwr"],[332,6,"hdg",6,"hold"],[333,6,"alt",6,"hold"],[335,2,"br",2,"rd",0,1],[336,2,"dh",2,"dt",0,1]]
     ]
 
     rows=len(mesh)
@@ -487,7 +488,7 @@ class lamps_class:
                 rec=self.mesh[r][c]
                 key=rec[0]
 
-                if gau_old[key]!=gau[key] or key==2001 or self.first_time>0:
+                if gau_old[key]!=gau[key] or key==2001 or key==2003 or key==self.def_radio or self.first_time>0:
 
                     if key==6:                       #dynamic update of APU temperature #6 values in the lamp box
                         temperature=int(900*gau[key])
@@ -495,7 +496,7 @@ class lamps_class:
                             turn_off_once=True
                         rec[4]=str(temperature)
 
-                    if key==2001:                    #dynamic update of weapons type and remaining rounds/storages
+                    if key==2001:                    #dynamic update of weapons type, mode and remaining rounds/storages
                         if gau[2002]>-1:
                             #StationTypes = {["9A4172"] = "NC", ["S-8KOM"] = "HP", ["S-13"] = "HP", ["UPK-23-250"] = "NN", ["AO-2.5RT"] = "A6", ["PTAB-2.5KO"] = "A6", ["FAB-250"] = "A6", ["FAB-500"] = "A6" }
                             if gau_text.has_key(key):
@@ -506,8 +507,26 @@ class lamps_class:
 
                             turn_on_once=True
 
-                    if key==2002 or key==2003:    #same as above
+                    if key==2002:                    #same as above
                         rec[4]=str(int(gau[key]))
+
+                    if key==2003:                    #same as above
+                        if gau[399]==1.0:
+                            rec[4]='HE'
+                        else:
+                            rec[4]='API'
+
+                        rec[4]=rec[4]+' '+str(int(gau[key]))
+
+                    if key==400:                    #same as above
+                        burst=['short','med','lng']
+                        rec[4]=burst[int(gau[key]*10)]
+                        turn_on_once=True
+
+                    if key==431:                    #same as above
+                        cannon_modes=['mov','fix','man','fail','nav']
+                        rec[4]=cannon_modes[int(gau[key]*10)]
+                        turn_on_once=True
 
                     if key==self.def_radio:          #displaying radio freq
                         turn_on_once=True
@@ -519,7 +538,7 @@ class lamps_class:
                         rec[4]=str(round(tmp,3))
 
                     if key==428:
-                        radio_text={0:'vhf2',1:'vhf1',2:'sw',3:'grn crw'}
+                        radio_text=['vhf2','vhf1','sw','grn crw']
                         turn_on_once=True
                         rec[4]=radio_text[int(gau[key]*10)]
 
@@ -531,20 +550,48 @@ class lamps_class:
                         turn_on_once=True
                         rec[4]=str(int(gau[key]*10)+1)
 
-                    if (gau[key]>0 and not turn_off_once) or force or turn_on_once:
-                        pygame.draw.rect(where,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
+                    if len(rec)==6 or len(rec)==7:
+#                        print gau[key],float(rec[5])
+                        if float(rec[5])==gau[key] or force:
+                            pygame.draw.rect(where,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height/2+1))
 
-                        text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
-                        w,h=text.get_size()
-                        where.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
+                            text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
+                            w,h=text.get_size()
+                            where.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
+                        else:
+                            pygame.draw.rect(where,self.bg_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height/2))
 
-                        text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
-                        w,h=text.get_size()
-                        where.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
-                        turn_on_once=False
+                        bottom=False
+                        if len(rec)==7:
+                            bottom=float(rec[6])==gau[key]
+                        else:
+                            bottom=float(rec[5])!=gau[key]
+
+                        if bottom or force:
+                            pygame.draw.rect(where,self.bg_active_color[rec[3]],(c*59,r*25-self.offset+self.height/2+1,self.width-1,self.height-self.height/2-2))
+
+                            text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
+                            w,h=text.get_size()
+                            where.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
+                        else:
+                            pygame.draw.rect(where,self.bg_color[rec[3]],(c*59,r*25-self.offset+self.height/2+1,self.width-1,self.height-self.height/2-2))
+
+
                     else:
-                        pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
-                        turn_off_once=False
+                        if (gau[key]>0 and not turn_off_once) or force or turn_on_once:
+                            pygame.draw.rect(where,self.bg_active_color[rec[1]],(c*59,r*25-self.offset,self.width-1,self.height-1))
+
+                            text=self.sf.render(rec[2].upper(),1,self.text_color[rec[1]])
+                            w,h=text.get_size()
+                            where.blit(text,(c*self.width+self.width/2-w/2,r*self.height,self.width,self.height))
+
+                            text=self.sf.render(rec[4].upper(),1,self.text_color[rec[3]])
+                            w,h=text.get_size()
+                            where.blit(text,(c*self.width+self.width/2-w/2,r*self.height+10,self.width,self.height))
+                            turn_on_once=False
+                        else:
+                            pygame.draw.rect(where,self.bg_color[rec[1]],(c*self.width,r*self.height-self.offset,self.width-1,self.height-1))
+                            turn_off_once=False
 
         self.first_time-=1
 
@@ -771,6 +818,8 @@ while keep_loop:
 
         if running.linux:
             debug.print_out()
+
+#        debug.print_out()
 
 #       profile.run('draw_all()')
         draw_all()
