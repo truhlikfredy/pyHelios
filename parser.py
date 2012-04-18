@@ -665,6 +665,8 @@ class debug_class:
 
         if running.win:
             os.system('CLS')
+#            print '\n'*40
+            pass
 
         cols=0
         print 'Debug output of variables'
@@ -680,41 +682,21 @@ class debug_class:
                 else:
                     refresh=False
 
-            if running.linux:
-                reset_color='\033[0m'
-                if refresh:
-                    key_color='\033[0m\033[31m'
-                    val_color='\033[0m\033[0m'
-                else:
-                    key_color='\033[1m\033[34m'
-                    val_color='\033[0m\033[36m'
-
-            if running.win:
-                reset_color=''
-                if refresh:
-                    key_color='\x1b[31m'
-                    val_color='\x1b[0m'
-                else:
-                    key_color='\x1b[34m'
-                    val_color='\x1b[36m'
-
+            reset_color='\033[0m'
+            if refresh:
+                key_color='\033[0m\033[31m'
+                val_color='\033[0m\033[0m'
+            else:
+                key_color='\033[1m\033[34m'
+                val_color='\033[0m\033[36m'
 
             sys.stdout.write(key_color+str(key).rjust(5,' ')+'='+val_color+str(gau[key]).ljust(7,' ')+reset_color+' ')
             if (cols%self.cols==0):
-                sys.stdout.write('\n')
+                print ''
 
-        sys.stdout.write('\n')
+        print ''
 
 running=running_class()
-
-#pprint.pprint(Fore.RED)
-
-cervena='\033[31m'
-
-#print cervena,'Ahoj'
-sys.stdout.write(cervena+'\033[1m\033[34m'+'ahoj')
-
-exit()
 
 gauge_small=153
 gauge_big=192
