@@ -40,7 +40,11 @@
 #00030.546 DEBUG   LuaExport::LuaExportStart:     function: 0000000025BC89F0
 
 import os,sys,socket,string,pygame,math,time,threading
-#import gc,pprint,profile
+import gc,pprint,profile
+#from colorama import init, Fore, Back, Style
+import colorama
+
+colorama.init()
 
 from collections import defaultdict
 from pygame.locals import *
@@ -55,6 +59,15 @@ gau_old=defaultdict(lambda:NaN)
 gau_text={}
 
 keep_loop=True
+
+class running_class():
+    def __init__(self):
+        self.linux=False
+        self.win=False
+        if os.name=='posix':
+            self.linux=True
+        elif os.name=='nt':
+            self.win=True
 
 class window_handling_class():
     def __init__(self,fullscreen=False,rotate_angle=0):
@@ -94,7 +107,7 @@ class window_handling_class():
         else:
             where=window
 
-        print window,where
+#        print window,where
 
     def flip(self):
         if self.rotate_angle>0:
@@ -647,7 +660,12 @@ class debug_class:
         self.gau_count=defaultdict(int)
 
     def print_out(self):
-        os.system('clear')                  #ms system os.system('CLS')     ### farby pre ms system robia bordel
+        if running.linux:
+            os.system('clear')
+
+        if running.win:
+            os.system('CLS')
+
         cols=0
         print 'Debug output of variables'
         for key in sorted(gau.keys()) :
@@ -662,19 +680,41 @@ class debug_class:
                 else:
                     refresh=False
 
-            if refresh:
-                key_color='\033[0m\033[31m'
-                val_color='\033[0m\033[0m'
-            else:
-                key_color='\033[1m\033[34m'
-                val_color='\033[0m\033[36m'
+            if running.linux:
+                reset_color='\033[0m'
+                if refresh:
+                    key_color='\033[0m\033[31m'
+                    val_color='\033[0m\033[0m'
+                else:
+                    key_color='\033[1m\033[34m'
+                    val_color='\033[0m\033[36m'
+
+            if running.win:
+                reset_color=''
+                if refresh:
+                    key_color='\x1b[31m'
+                    val_color='\x1b[0m'
+                else:
+                    key_color='\x1b[34m'
+                    val_color='\x1b[36m'
 
 
-            sys.stdout.write(key_color+str(key).rjust(5,' ')+'='+val_color+str(gau[key]).ljust(7,' ')+'\033[0m'+' ')
+            sys.stdout.write(key_color+str(key).rjust(5,' ')+'='+val_color+str(gau[key]).ljust(7,' ')+reset_color+' ')
             if (cols%self.cols==0):
                 sys.stdout.write('\n')
 
         sys.stdout.write('\n')
+
+running=running_class()
+
+#pprint.pprint(Fore.RED)
+
+cervena='\033[31m'
+
+#print cervena,'Ahoj'
+sys.stdout.write(cervena+'\033[1m\033[34m'+'ahoj')
+
+exit()
 
 gauge_small=153
 gauge_big=192
@@ -748,7 +788,7 @@ while keep_loop:
     if gau_updated.is_set() and not gatherer.stopped():
         gau_lock.acquire()
 
-#        debug.print_out()
+        debug.print_out()
 
 #       profile.run('draw_all()')
         draw_all()

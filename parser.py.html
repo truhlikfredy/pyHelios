@@ -1,0 +1,796 @@
+<code>
+<font color=#007f00>#!/usr/bin/python</font><br>
+<br>
+<font color=#007f00>#BS2/scripts/aircrafts/ka-50/cockpit/devices.lua</font><br>
+<font color=#007f00>#BS2/scripts/aircrafts/ka-50/copkpit/mainpanel_init.lua</font><br>
+<font color=#007f00>#BS2/scripts/aircrafts/ka-50/copkpit/command_defs.lua</font><br>
+<font color=#007f00>#BS2/scripts/aircrafts/ka-50/copkpit/clickabledata.lua</font><br>
+<font color=#007f00>#BS2/bin/cockpitka50.dll&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#hidden&nbsp;methods&nbsp;of&nbsp;devices</font><br>
+<font color=#007f00>#BS2/config/export/export.lua</font><br>
+<font color=#007f00>#--world&nbsp;events</font><br>
+<font color=#007f00>#BIRTH_ON_PARKING_AREA&nbsp;&nbsp;&nbsp;=&nbsp;10001,</font><br>
+<font color=#007f00>#BIRTH_ON_RUNWAY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;10002,</font><br>
+<font color=#007f00>#BIRTH_COLD_ON_HELIPAD&nbsp;&nbsp;=&nbsp;10003,</font><br>
+<font color=#007f00>#BIRTH_HOT_ON_HELIPAD&nbsp;&nbsp;=&nbsp;10004,</font><br>
+<font color=#007f00>#TAKEOFF&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;10005,</font><br>
+<font color=#007f00>#LANDING&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;10006,</font><br>
+<font color=#007f00>#--inner&nbsp;events</font><br>
+<font color=#007f00>#STARTUP_PERMISSION_FROM_AIRDROME&nbsp;=&nbsp;10007,</font><br>
+<font color=#007f00>#STARTUP_PERMISSION_FROM_HELIPAD&nbsp;=&nbsp;10008,</font><br>
+<font color=#007f00>#--</font><br>
+<font color=#007f00>#START_WP_DIALOG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;10009,</font><br>
+<font color=#007f00>#START_IR_POINTER_DIALOG&nbsp;=&nbsp;10010,</font><br>
+<font color=#007f00>#START_LASER_DIALOG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;10011,</font><br>
+<br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;(metatable)</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;__index</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;[__index]&nbsp;=&nbsp;(table)</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;get_frequency</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;000000005B3B4EA0</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;performClickableAction</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;0000000025BBB910</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;is_on</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;000000005B3B2CF0</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;listen_event</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;000000005B3B5D30</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;set_channel</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;000000005B3DF560</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;listen_command</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;0000000025BBB960</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;SetCommand</font><br>
+<font color=#007f00>#00030.546&nbsp;DEBUG&nbsp;&nbsp;&nbsp;LuaExport::LuaExportStart:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function:&nbsp;0000000025BC89F0</font><br>
+<br>
+import&nbsp;os,sys,socket,string,pygame,math,time,threading<br>
+import&nbsp;gc,pprint,profile<br>
+from&nbsp;colorama&nbsp;import&nbsp;init,&nbsp;Fore,&nbsp;Back,&nbsp;Style<br>
+<br>
+init()<br>
+<br>
+from&nbsp;collections&nbsp;import&nbsp;defaultdict<br>
+from&nbsp;pygame.locals&nbsp;import&nbsp;*<br>
+<br>
+NaN=float(<font color=#0000bb>'nan'</font>)<br>
+<font color=#007f00>#resolution=(768,650)</font><br>
+resolution=(<font color=#0000bb>768</font>,<font color=#0000bb>1024</font>)<br>
+gau_lock=threading.Lock()<br>
+gau_updated=threading.Event()<br>
+gau=defaultdict(int)<br>
+gau_old=defaultdict(lambda:NaN)<br>
+gau_text={}<br>
+<br>
+keep_loop=True<br>
+<br>
+class&nbsp;running_class():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.linux=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.win=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;os.name==<font color=#0000bb>'posix'</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.linux=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elif&nbsp;os.name==<font color=#0000bb>'nt'</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.win=True<br>
+<br>
+class&nbsp;window_handling_class():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self,fullscreen=False,rotate_angle=<font color=#0000bb>0</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.fullscreen=fullscreen<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate_angle=rotate_angle<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.set_mode()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;switch_fullscreen(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.fullscreen:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.fullscreen=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.fullscreen=True<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.set_mode()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;rotate(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate_angle=(self.rotate_angle+<font color=#0000bb>90</font>)%<font color=#0000bb>360</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.set_mode()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;set_mode(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;global&nbsp;window,where<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.rotate_angle==<font color=#0000bb>90</font>&nbsp;or&nbsp;self.rotate_angle==<font color=#0000bb>270</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y,x=resolution<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x,y=resolution<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.fullscreen:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window=pygame.display.set_mode((x,y),pygame.FULLSCREEN)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window=pygame.display.set_mode((x,y))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.rotate_angle&#62;<font color=#0000bb>0</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where=pygame.Surface(resolution)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where=window<br>
+<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;window,where</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;flip(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.rotate_angle&#62;<font color=#0000bb>0</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window.blit(pygame.transform.rotate(where,self.rotate_angle),(<font color=#0000bb>0</font>,<font color=#0000bb>0</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.display.flip()<br>
+<br>
+def&nbsp;conv_nonlinear(table,value):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;i&nbsp;in&nbsp;range(len(table)-<font color=#0000bb>1</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;table[i][<font color=#0000bb>0</font>]&#60;=value&nbsp;and&nbsp;table[i+<font color=#0000bb>1</font>][<font color=#0000bb>0</font>]&#62;value:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a=table[i]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b=table[i+<font color=#0000bb>1</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=((value-a[<font color=#0000bb>0</font>])/(b[<font color=#0000bb>0</font>]-a[<font color=#0000bb>0</font>]))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(tmp*(b[<font color=#0000bb>2</font>]-a[<font color=#0000bb>2</font>])+a[<font color=#0000bb>2</font>])<br>
+<br>
+class&nbsp;gauges:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;color={<font color=#0000bb>'white'</font>:(<font color=#0000bb>255</font>,<font color=#0000bb>255</font>,<font color=#0000bb>255</font>),<font color=#0000bb>'red'</font>:(<font color=#0000bb>255</font>,<font color=#0000bb>150</font>,<font color=#0000bb>150</font>),<font color=#0000bb>'red+'</font>:(<font color=#0000bb>255</font>,<font color=#0000bb>100</font>,<font color=#0000bb>100</font>),<font color=#0000bb>'red++'</font>:(<font color=#0000bb>255</font>,<font color=#0000bb>50</font>,<font color=#0000bb>50</font>),<font color=#0000bb>'red+++'</font>:(<font color=#0000bb>255</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),<font color=#0000bb>'green'</font>:(<font color=#0000bb>150</font>,<font color=#0000bb>255</font>,<font color=#0000bb>150</font>),<font color=#0000bb>'green+'</font>:(<font color=#0000bb>100</font>,<font color=#0000bb>255</font>,<font color=#0000bb>100</font>),<font color=#0000bb>'grey'</font>:(<font color=#0000bb>100</font>,<font color=#0000bb>100</font>,<font color=#0000bb>100</font>)}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;instances=[]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self,bg,origin,size,radius=None,draw_on_init=True):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;radius==None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;radius=size/<font color=#0000bb>2</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x,y=origin<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.next_right=(x+size,y)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.next_row=(<font color=#0000bb>0</font>,y+size)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.refresh=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val={<font color=#0000bb>0</font>:<font color=#0000bb>0</font>,<font color=#0000bb>1</font>:None}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val_old={<font color=#0000bb>0</font>:-<font color=#0000bb>1</font>,<font color=#0000bb>1</font>:None}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.bg=pygame.image.load(bg)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.x=x<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.y=y<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.origin=(x,y)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.size=size<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.radius=radius<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.center=(self.x+self.size/<font color=#0000bb>2</font>,self.y+self.size/<font color=#0000bb>2</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.instances.append(self)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;draw_on_init==True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw()<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;rotate(self,what,angle):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=pygame.transform.rotozoom(what,angle,<font color=#0000bb>1</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;w,h=tmp.get_size()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(tmp,(self.x+self.instr_x-w/<font color=#0000bb>2</font>,self.y+self.instr_y-h/<font color=#0000bb>2</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;draw_needle(self,center,angle,color,size_x=None,size_y=None):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;center==None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;center=self.center<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;size_x==None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_x=self.size<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;size_y==None:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size_y=size_x<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;center_x,center_y=center<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;max=<font color=#0000bb>2</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;l&nbsp;in&nbsp;range(-max,max+<font color=#0000bb>1</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off_x=math.cos((angle+<font color=#0000bb>90</font>)*math.pi/<font color=#0000bb>180</font>)*l*<font color=#0000bb>0.5</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off_y=math.sin((angle+<font color=#0000bb>90</font>)*math.pi/<font color=#0000bb>180</font>)*l*<font color=#0000bb>0.5</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;point=math.fabs(l)*<font color=#0000bb>2</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.aaline(where,color,(center_x+off_x,center_y+off_y),(center_x+off_x+math.cos(angle*math.pi/<font color=#0000bb>180</font>)*(size_x-point),center_y+off_y+math.sin(angle*math.pi/<font color=#0000bb>180</font>)*(size_y-point)))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;draw_gauge(self,size_needle,angle1,angle2=None):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.bg,self.origin)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color1=self.color[<font color=#0000bb>'white'</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;angle2:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,angle2,self.color[<font color=#0000bb>'red'</font>],size_needle)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color1=self.color[<font color=#0000bb>'green'</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,angle1,color1,size_needle)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;set_force_refresh(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;key&nbsp;in&nbsp;self.val_old.keys():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val_old[key]=NaN<br>
+<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;set_force_refresh_all(self):</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;obj&nbsp;in&nbsp;self.instances:</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj.set_force_refresh()</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.refresh=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;key&nbsp;in&nbsp;self.val.keys():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;not&nbsp;self.val_old.has_key(key)&nbsp;or&nbsp;self.val[key]!=self.val_old[key]:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.refresh=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val_old[key]=self.val[key]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(self.refresh)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.refresh==True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_gauge(self.radius,self.val[<font color=#0000bb>0</font>],self.val[<font color=#0000bb>1</font>])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.refresh=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(True)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(False)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw_default(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(self.draw())<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw_all(self):</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;obj&nbsp;in&nbsp;self.instances:</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj.check_draw()</font><br>
+<br>
+<br>
+class&nbsp;vvi_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>180</font>+<font color=#0000bb>180</font>*gau[<font color=#0000bb>24</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;blade_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>165</font>+<font color=#0000bb>210</font>*gau[<font color=#0000bb>53</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;ias_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>275</font>+(conv_nonlinear(((<font color=#0000bb>0</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),(<font color=#0000bb>0.142857</font>,<font color=#0000bb>50</font>,<font color=#0000bb>90</font>),(<font color=#0000bb>1</font>,<font color=#0000bb>350</font>,<font color=#0000bb>360</font>)),gau[<font color=#0000bb>51</font>]))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;acc_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>170</font>+<font color=#0000bb>300</font>*gau[<font color=#0000bb>97</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'min'</font>]=<font color=#0000bb>170</font>+<font color=#0000bb>300</font>*gau[<font color=#0000bb>99</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'max'</font>]=<font color=#0000bb>170</font>+<font color=#0000bb>300</font>*gau[<font color=#0000bb>98</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.check_draw_default():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,self.val[<font color=#0000bb>'min'</font>],self.color[<font color=#0000bb>'red+'</font>],self.radius-<font color=#0000bb>5</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,self.val[<font color=#0000bb>'max'</font>],self.color[<font color=#0000bb>'red+'</font>],self.radius-<font color=#0000bb>5</font>)<br>
+<br>
+class&nbsp;rotor_rpm_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>315</font>+<font color=#0000bb>350</font>*gau[<font color=#0000bb>52</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;eng_rpm_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>315</font>+<font color=#0000bb>350</font>*gau[<font color=#0000bb>135</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>1</font>]=<font color=#0000bb>315</font>+<font color=#0000bb>350</font>*gau[<font color=#0000bb>136</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;fuel_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>115</font>+<font color=#0000bb>305</font>*gau[<font color=#0000bb>137</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>1</font>]=<font color=#0000bb>115</font>+<font color=#0000bb>305</font>*gau[<font color=#0000bb>138</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;baro_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#value&nbsp;#573&nbsp;is&nbsp;tenth&nbsp;of&nbsp;unit,&nbsp;but&nbsp;no&nbsp;data&nbsp;stream&nbsp;-&#62;&nbsp;perhaps&nbsp;from&nbsp;A-10?</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>87</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>1</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>3600</font>*gau[<font color=#0000bb>87</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'pressure'</font>]=gau[<font color=#0000bb>98</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw_default()<br>
+<br>
+class&nbsp;temp_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#566&nbsp;eng1_tenth&nbsp;&#38;&nbsp;567&nbsp;eng2_tenth&nbsp;=&nbsp;no&nbsp;data</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'eng1'</font>]=<font color=#0000bb>135</font>+<font color=#0000bb>270</font>*gau[<font color=#0000bb>133</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'eng1_tenth'</font>]=<font color=#0000bb>90</font>+((<font color=#0000bb>1200</font>*gau[<font color=#0000bb>133</font>])%<font color=#0000bb>100</font>)*<font color=#0000bb>3.6</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'eng2'</font>]=<font color=#0000bb>135</font>+<font color=#0000bb>270</font>*gau[<font color=#0000bb>134</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'eng2_tenth'</font>]=<font color=#0000bb>90</font>+((<font color=#0000bb>1200</font>*gau[<font color=#0000bb>134</font>])%<font color=#0000bb>100</font>)*<font color=#0000bb>3.6</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.check():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.bg,self.origin)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>44</font>,self.y+<font color=#0000bb>71</font>),self.val[<font color=#0000bb>'eng1'</font>],self.color[<font color=#0000bb>'white'</font>],self.radius)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>44</font>,self.y+<font color=#0000bb>102</font>),self.val[<font color=#0000bb>'eng1_tenth'</font>],self.color[<font color=#0000bb>'white'</font>],self.radius-<font color=#0000bb>5</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>106</font>,self.y+<font color=#0000bb>71</font>),self.val[<font color=#0000bb>'eng2'</font>],self.color[<font color=#0000bb>'white'</font>],self.radius)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>106</font>,self.y+<font color=#0000bb>102</font>),self.val[<font color=#0000bb>'eng2_tenth'</font>],self.color[<font color=#0000bb>'white'</font>],self.radius-<font color=#0000bb>5</font>)<br>
+<br>
+class&nbsp;clock_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'hours'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>68</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'min'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>69</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'sec'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>70</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'flight_status'</font>]=gau[<font color=#0000bb>75</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'flight_hours'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>72</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'flight_min'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>531</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'sw_min'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>73</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'sw_sec'</font>]=<font color=#0000bb>270</font>+<font color=#0000bb>360</font>*gau[<font color=#0000bb>532</font>]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.check():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.bg,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.rect(where,self.color[<font color=#0000bb>'grey'</font>],(self.x+<font color=#0000bb>73</font>,self.y+<font color=#0000bb>51</font>,<font color=#0000bb>8</font>,<font color=#0000bb>8</font>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(self.val[<font color=#0000bb>'flight_status'</font>]==<font color=#0000bb>0.1</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.rect(where,self.color[<font color=#0000bb>'red+'</font>],(self.x+<font color=#0000bb>73</font>,self.y+<font color=#0000bb>51</font>,<font color=#0000bb>8</font>,<font color=#0000bb>8</font>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elif&nbsp;(self.val[<font color=#0000bb>'flight_status'</font>]==<font color=#0000bb>0.2</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.rect(where,self.color[<font color=#0000bb>'red+'</font>],(self.x+<font color=#0000bb>73</font>+<font color=#0000bb>4</font>,self.y+<font color=#0000bb>51</font>,<font color=#0000bb>4</font>,<font color=#0000bb>8</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,self.val[<font color=#0000bb>'hours'</font>],self.color[<font color=#0000bb>'white'</font>],<font color=#0000bb>45</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,self.val[<font color=#0000bb>'min'</font>],self.color[<font color=#0000bb>'red+'</font>],<font color=#0000bb>50</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,self.val[<font color=#0000bb>'sec'</font>],self.color[<font color=#0000bb>'green+'</font>],<font color=#0000bb>55</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>76</font>,self.y+<font color=#0000bb>42</font>),self.val[<font color=#0000bb>'flight_hours'</font>],self.color[<font color=#0000bb>'white'</font>],self.radius)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>76</font>,self.y+<font color=#0000bb>42</font>),self.val[<font color=#0000bb>'flight_min'</font>],self.color[<font color=#0000bb>'red+'</font>],self.radius-<font color=#0000bb>2</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>76</font>,self.y+<font color=#0000bb>110</font>),self.val[<font color=#0000bb>'sw_min'</font>],self.color[<font color=#0000bb>'red+'</font>],self.radius)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle((self.x+<font color=#0000bb>76</font>,self.y+<font color=#0000bb>110</font>),self.val[<font color=#0000bb>'sw_sec'</font>],self.color[<font color=#0000bb>'green+'</font>],self.radius-<font color=#0000bb>2</font>)<br>
+<br>
+class&nbsp;radar_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#default&nbsp;danger&nbsp;0.6090</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;scale=((<font color=#0000bb>0</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),(<font color=#0000bb>0.1838</font>,<font color=#0000bb>20</font>,<font color=#0000bb>65</font>),(<font color=#0000bb>0.4631</font>,<font color=#0000bb>50</font>,<font color=#0000bb>165</font>),(<font color=#0000bb>0.7541</font>,<font color=#0000bb>150</font>,<font color=#0000bb>270</font>),(<font color=#0000bb>0.833</font>,<font color=#0000bb>200</font>,<font color=#0000bb>300</font>),(<font color=#0000bb>0.9329</font>,<font color=#0000bb>300</font>,<font color=#0000bb>330</font>),(<font color=#0000bb>1</font>,<font color=#0000bb>350</font>,<font color=#0000bb>340</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>0</font>]=<font color=#0000bb>270</font>+conv_nonlinear(scale,gau[<font color=#0000bb>94</font>])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'danger'</font>]=<font color=#0000bb>270</font>+conv_nonlinear(scale,gau[<font color=#0000bb>93</font>])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'danger_lamp'</font>]=gau[<font color=#0000bb>92</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'flag'</font>]=gau[<font color=#0000bb>95</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.check_draw_default():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw_needle(None,self.val[<font color=#0000bb>'danger'</font>]&nbsp;&nbsp;&nbsp;&nbsp;,self.color[<font color=#0000bb>'red+'</font>],self.radius-<font color=#0000bb>5</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.val[<font color=#0000bb>'danger_lamp'</font>]==<font color=#0000bb>1</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.circle(where,self.color[<font color=#0000bb>'red+++'</font>],(self.x+self.size-<font color=#0000bb>15</font>,self.y+self.size-<font color=#0000bb>15</font>),<font color=#0000bb>15</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.val[<font color=#0000bb>'flag'</font>]&#62;<font color=#0000bb>0</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.circle(where,self.color[<font color=#0000bb>'red++'</font>],self.center,<font color=#0000bb>25</font>)<br>
+<br>
+class&nbsp;adi_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#not&nbsp;all&nbsp;informations&nbsp;are&nbsp;displaying,&nbsp;but&nbsp;it's&nbsp;in&nbsp;just&nbsp;very&nbsp;rare&nbsp;cases&nbsp;when&nbsp;they&nbsp;are&nbsp;needed&nbsp;and&nbsp;are&nbsp;not&nbsp;in&nbsp;the&nbsp;default&nbsp;values</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self,bg,origin,size,radius=None,draw_on_init=True):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gauges.__init__(self,bg,origin,size,radius,False)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.horisont=pygame.image.load(<font color=#0000bb>'img/adi-horisont.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.wings=pygame.image.load(<font color=#0000bb>'img/adi-wings.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.ball=pygame.image.load(<font color=#0000bb>'img/adi-ball.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.instr_x=<font color=#0000bb>76</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.instr_y=<font color=#0000bb>69</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.ball_y=<font color=#0000bb>146</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;draw_on_init==True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'roll'</font>]=<font color=#0000bb>180</font>*gau[<font color=#0000bb>100</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'pitch'</font>]=<font color=#0000bb>22</font>*<font color=#0000bb>9</font>*gau[<font color=#0000bb>101</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'steering_flag'</font>]=gau[<font color=#0000bb>102</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'attitude_flag'</font>]=gau[<font color=#0000bb>109</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'bank_steering'</font>]=gau[<font color=#0000bb>107</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'pitch_steering'</font>]=gau[<font color=#0000bb>106</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'airspeed_dev'</font>]=gau[<font color=#0000bb>111</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'track_dev'</font>]=gau[<font color=#0000bb>103</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'height_dev'</font>]=gau[<font color=#0000bb>526</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'sideslip'</font>]=gau[<font color=#0000bb>108</font>]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.check():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=pygame.Surface((self.size,self.size))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp.blit(self.horisont,(<font color=#0000bb>0</font>,-self.val[<font color=#0000bb>'pitch'</font>]))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(tmp,self.origin)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.bg,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate(self.wings,-self.val[<font color=#0000bb>'roll'</font>])<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;w,h=self.ball.get_size()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.ball,(self.x+self.instr_x+self.val[<font color=#0000bb>'sideslip'</font>]*<font color=#0000bb>16</font>-w/<font color=#0000bb>2</font>,self.y+self.ball_y-h/<font color=#0000bb>2</font>))<br>
+<br>
+class&nbsp;hsi_gauge(gauges):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#not&nbsp;sure&nbsp;if&nbsp;data&nbsp;for&nbsp;these:</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#hsi_course_flag</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#hsi_glide_flag</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#hsi_range_hundreds</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#hsi_range_tenth</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#hsi_course_hundreds</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#hsi_course_units</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self,bg,origin,size,radius=None,draw_on_init=True):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gauges.__init__(self,bg,origin,size,radius,False)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.compas=pygame.image.load(<font color=#0000bb>'img/hsi-compas.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.dta=pygame.image.load(<font color=#0000bb>'img/hsi-dta.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.hover_back=pygame.image.load(<font color=#0000bb>'img/hsi-hover-back.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.hover_cross=pygame.image.load(<font color=#0000bb>'img/hsi-hover-cross.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.k=pygame.image.load(<font color=#0000bb>'img/hsi-k.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.kc=pygame.image.load(<font color=#0000bb>'img/hsi-kc.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.l=pygame.image.load(<font color=#0000bb>'img/hsi-l.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rmi=pygame.image.load(<font color=#0000bb>'img/hsi-rmi.png'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.dh=pygame.image.load(<font color=#0000bb>'img/hsi-dh.png'</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.instr_x=<font color=#0000bb>96</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.instr_y=<font color=#0000bb>96</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.font=pygame.font.Font(None,<font color=#0000bb>24</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;draw_on_init==True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.check_draw()<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;check_draw(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'heading'</font>]=gau[<font color=#0000bb>112</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'cmd_course'</font>]=gau[<font color=#0000bb>118</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'cmd_heading'</font>]=gau[<font color=#0000bb>124</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'bearing'</font>]=gau[<font color=#0000bb>115</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'heading_flag'</font>]=gau[<font color=#0000bb>119</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'course_flag'</font>]=gau[<font color=#0000bb>114</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'glide_flag'</font>]=gau[<font color=#0000bb>124</font>]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#maybe&nbsp;from&nbsp;A-<font color=#0000bb>10</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'range_hundreds'</font>]=gau[<font color=#0000bb>117</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'range_tenth'</font>]=gau[<font color=#0000bb>527</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'range_units'</font>]=gau[<font color=#0000bb>528</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'course_hundreds'</font>]=gau[<font color=#0000bb>529</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'course_units'</font>]=gau[<font color=#0000bb>528</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'long_dev'</font>]=gau[<font color=#0000bb>127</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'late_dev'</font>]=gau[<font color=#0000bb>128</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'range_flag'</font>]=gau[<font color=#0000bb>116</font>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.val[<font color=#0000bb>'course_na_flag'</font>]=gau[<font color=#0000bb>121</font>]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.check():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.hover_back,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#i&nbsp;want&nbsp;to&nbsp;have&nbsp;55&nbsp;but&nbsp;at&nbsp;moment&nbsp;the&nbsp;graphics&nbsp;layers&nbsp;are&nbsp;not&nbsp;ready&nbsp;for&nbsp;it&nbsp;so&nbsp;it&nbsp;will&nbsp;be&nbsp;22</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=pygame.Surface((self.size,self.size),<font color=#0000bb>0</font>,self.hover_cross)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp.blit(self.hover_cross,(self.val[<font color=#0000bb>'late_dev'</font>]*<font color=#0000bb>22</font>,-self.val[<font color=#0000bb>'long_dev'</font>]*<font color=#0000bb>22</font>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(tmp,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate(self.compas,self.val[<font color=#0000bb>'heading'</font>]*<font color=#0000bb>360</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate(self.rmi,-self.val[<font color=#0000bb>'bearing'</font>]*<font color=#0000bb>360</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate(self.dta,(self.val[<font color=#0000bb>'heading'</font>]-self.val[<font color=#0000bb>'cmd_course'</font>])*<font color=#0000bb>360</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.bg,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.rotate(self.dh,(self.val[<font color=#0000bb>'heading'</font>]-self.val[<font color=#0000bb>'cmd_heading'</font>])*<font color=#0000bb>360</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=self.font.render(str(int(self.val[<font color=#0000bb>'cmd_course'</font>]*<font color=#0000bb>360</font>)),<font color=#0000bb>1</font>,self.color[<font color=#0000bb>'white'</font>])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(text,(self.x+<font color=#0000bb>146</font>,self.y+<font color=#0000bb>18</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=self.font.render(str(int(self.val[<font color=#0000bb>'range_units'</font>]*<font color=#0000bb>10</font>)),<font color=#0000bb>1</font>,self.color[<font color=#0000bb>'white'</font>])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(text,(self.x+<font color=#0000bb>17</font>,self.y+<font color=#0000bb>18</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.val[<font color=#0000bb>'heading_flag'</font>]==<font color=#0000bb>1</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.kc,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.val[<font color=#0000bb>'course_flag'</font>]==<font color=#0000bb>1</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.k,self.origin)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.val[<font color=#0000bb>'course_na_flag'</font>]==<font color=#0000bb>1</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.l,self.origin)<br>
+<br>
+class&nbsp;lamps_class:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#63&nbsp;nose&nbsp;up,59&nbsp;lef&nbsp;gear,61&nbsp;right&nbsp;gear,&nbsp;48&nbsp;lower&nbsp;gear&nbsp;warn&nbsp;lamp&nbsp;but&nbsp;I&nbsp;didn't&nbsp;saw&nbsp;it&nbsp;in&nbsp;copkit</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0=green,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1=yellow,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2=white-green,&nbsp;&nbsp;3=red,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4=black,&nbsp;&nbsp;&nbsp;&nbsp;5=landing&nbsp;gear&nbsp;&nbsp;6=lit&nbsp;buttons</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;bg_color=(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>30</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>30</font>,<font color=#0000bb>30</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>25</font>,<font color=#0000bb>30</font>,<font color=#0000bb>25</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>30</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>60</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>1</font>,<font color=#0000bb>39</font>,<font color=#0000bb>51</font>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bg_active_color=(&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>60</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>60</font>,<font color=#0000bb>60</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>50</font>,<font color=#0000bb>60</font>,<font color=#0000bb>50</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>60</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>60</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>127</font>,<font color=#0000bb>180</font>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text_color=(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>60</font>,<font color=#0000bb>255</font>,<font color=#0000bb>60</font>),&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>255</font>,<font color=#0000bb>255</font>,<font color=#0000bb>60</font>),&nbsp;&nbsp;&nbsp;(<font color=#0000bb>200</font>,<font color=#0000bb>255</font>,<font color=#0000bb>200</font>),&nbsp;&nbsp;(<font color=#0000bb>255</font>,<font color=#0000bb>60</font>,<font color=#0000bb>60</font>),&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>0</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),&nbsp;&nbsp;&nbsp;&nbsp;(<font color=#0000bb>255</font>,<font color=#0000bb>255</font>,<font color=#0000bb>255</font>),&nbsp;&nbsp;(<font color=#0000bb>196</font>,<font color=#0000bb>205</font>,<font color=#0000bb>226</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;width=<font color=#0000bb>59</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;height=<font color=#0000bb>25</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;offset=<font color=#0000bb>3</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def_na=<font color=#0000bb>65535</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;def_radio=<font color=#0000bb>65534</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mesh=[<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;[[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""],[def_na,4,"",4,""]]</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>165</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"ENR"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"NAV&nbsp;ON"</font>],[<font color=#0000bb>164</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"AC-POS"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"CAL-DATA"</font>],[<font color=#0000bb>211</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"X-FEED"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"VLV&nbsp;OPEN"</font>],[<font color=#0000bb>167</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"MASTER"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"ARM&nbsp;ON"</font>],[<font color=#0000bb>189</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"computer"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"diagnose"</font>],[<font color=#0000bb>181</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"lh&nbsp;eng"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"anti-ice"</font>],[<font color=#0000bb>182</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"rh&nbsp;eng"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"anti-ice"</font>],[<font color=#0000bb>200</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"fwd&nbsp;tank"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"pump&nbsp;on"</font>],[<font color=#0000bb>201</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"aft&nbsp;tank"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"pump&nbsp;on"</font>],[<font color=#0000bb>78</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"lh&nbsp;eng"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"overspd"</font>],[<font color=#0000bb>79</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"rh&nbsp;eng"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"overspd"</font>],[<font color=#0000bb>80</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"over-g"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>""</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[<font color=#0000bb>170</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"r-alt"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"hold"</font>],[<font color=#0000bb>171</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"enr"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"course"</font>],[<font color=#0000bb>178</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"weap"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"arm"</font>],[<font color=#0000bb>187</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"turbo"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"gear"</font>],[<font color=#0000bb>180</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"weapon"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"training"</font>],[<font color=#0000bb>206</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"computer"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"fail"</font>],[<font color=#0000bb>190</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"lh&nbsp;eng"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"dustprot"</font>],[<font color=#0000bb>191</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"rh&nbsp;eng"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"dustprot"</font>],[<font color=#0000bb>209</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"lh&nbsp;vlv"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"closed"</font>],[<font color=#0000bb>210</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"rh&nbsp;vlv"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"closed"</font>],[<font color=#0000bb>81</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"lh&nbsp;eng"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"vibr"</font>],[<font color=#0000bb>82</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"rh&nbsp;eng"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"vibr"</font>],[<font color=#0000bb>83</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"ias"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"max"</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[<font color=#0000bb>175</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"auto"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"hover"</font>],[<font color=#0000bb>176</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"next"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"wp"</font>],[<font color=#0000bb>173</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"cannon"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>204</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"agb"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"oil&nbsp;press"</font>],[<font color=#0000bb>179</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"hms"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"fail"</font>],[<font color=#0000bb>212</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"inverter"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"on"</font>],[<font color=#0000bb>207</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"lh&nbsp;power"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"set&nbsp;lim"</font>],[<font color=#0000bb>208</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"rh&nbsp;power"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"set&nbsp;lim"</font>],[<font color=#0000bb>185</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"lh&nbsp;outer"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"tank&nbsp;pump"</font>],[<font color=#0000bb>186</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"rh&nbsp;outer"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"tank&nbsp;pump"</font>],[<font color=#0000bb>84</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"main"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"grbx"</font>],[<font color=#0000bb>85</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fire"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>86</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"iff"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fail"</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[<font color=#0000bb>172</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"auto"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"descent"</font>],[<font color=#0000bb>166</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"route"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"end"</font>],[<font color=#0000bb>177</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"cannon"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"v"</font>],[<font color=#0000bb>213</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"sl-hook"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"open"</font>],[<font color=#0000bb>188</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"hud"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"no&nbsp;ready"</font>],[<font color=#0000bb>205</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"skval"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"fail"</font>],[<font color=#0000bb>183</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"rotor"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"anti-ice"</font>],[<font color=#0000bb>184</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"wndshld"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"heater"</font>],[<font color=#0000bb>202</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"lh&nbsp;inner"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"tank&nbsp;pump"</font>],[<font color=#0000bb>203</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"rh&nbsp;inner"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"tank&nbsp;pump"</font>],[<font color=#0000bb>46</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"rotor"</font>,<font color=#0000bb>1</font>,<font color=#0000bb>"rpm"</font>],[<font color=#0000bb>44</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"master"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"warning"</font>],[<font color=#0000bb>2222</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[<font color=#0000bb>237</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fire"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"lh&nbsp;eng"</font>],[<font color=#0000bb>239</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fire"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"apu"</font>],[<font color=#0000bb>568</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fire"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"hydr"</font>],[<font color=#0000bb>241</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fire"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"rh&nbsp;eng"</font>],[<font color=#0000bb>243</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"fire"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"grbx"</font>],[<font color=#0000bb>244</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"1"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>245</font>,<font color=#0000bb>3</font>,<font color=#0000bb>"2"</font>,<font color=#0000bb>3</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>6</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"apu&nbsp;tmp"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>162</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"apu&nbsp;vlv"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"open"</font>],[<font color=#0000bb>168</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"apu&nbsp;oil"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"press"</font>],[<font color=#0000bb>169</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"apu&nbsp;stop"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"rpm"</font>],[<font color=#0000bb>174</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"apu"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"on"</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[<font color=#0000bb>2001</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"store"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>2002</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"remain"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>2003</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"rnds"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>60</font>,<font color=#0000bb>5</font>,<font color=#0000bb>"lnd&nbsp;gear"</font>,<font color=#0000bb>5</font>,<font color=#0000bb>"left"</font>],[<font color=#0000bb>64</font>,<font color=#0000bb>5</font>,<font color=#0000bb>"lnd&nbsp;gear"</font>,<font color=#0000bb>5</font>,<font color=#0000bb>"nose"</font>],[<font color=#0000bb>62</font>,<font color=#0000bb>5</font>,<font color=#0000bb>"lnd&nbsp;gear"</font>,<font color=#0000bb>5</font>,<font color=#0000bb>"right"</font>],[<font color=#0000bb>586</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"ext&nbsp;ac"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"pwr"</font>],[<font color=#0000bb>261</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"ext&nbsp;dc"</font>,<font color=#0000bb>0</font>,<font color=#0000bb>"pwr"</font>],[def_radio,<font color=#0000bb>2</font>,<font color=#0000bb>"r-800"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>428</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"spu-9"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>357</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"adf"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>371</font>,<font color=#0000bb>2</font>,<font color=#0000bb>"r-828"</font>,<font color=#0000bb>2</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>437</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"auto"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"turn"</font>],[<font color=#0000bb>439</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"a/a"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"h&nbsp;o"</font>],[<font color=#0000bb>441</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"reset"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>330</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"bank"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"hold"</font>],[<font color=#0000bb>331</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"pitch"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"hold"</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>334</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"FD"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"AP"</font>]],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>438</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"a/a"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>440</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"mov"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"gnd&nbsp;tgt"</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[<font color=#0000bb>332</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"hdg"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"hold"</font>],[<font color=#0000bb>333</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"alt"</font>,<font color=#0000bb>6</font>,<font color=#0000bb>"hold"</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>],[def_na,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>,<font color=#0000bb>4</font>,<font color=#0000bb>""</font>]]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rows=len(mesh)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cols=len(mesh[<font color=#0000bb>0</font>])<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.next_right=(self.width*self.cols,self.height)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.next_row=(<font color=#0000bb>0</font>,self.height*self.rows-self.offset)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.sf=pygame.font.Font(None,<font color=#0000bb>14</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.first_time=<font color=#0000bb>2</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw(True)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;draw(self,force=False):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_off_once=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;r&nbsp;in&nbsp;range(self.rows):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;c&nbsp;in&nbsp;range(self.cols):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec=self.mesh[r][c]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key=rec[<font color=#0000bb>0</font>]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_old[key]!=gau[key]&nbsp;or&nbsp;key==<font color=#0000bb>2001</font>&nbsp;or&nbsp;self.first_time&#62;<font color=#0000bb>0</font>:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>6</font>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#dynamic&nbsp;update&nbsp;of&nbsp;APU&nbsp;temperature&nbsp;#<font color=#0000bb>6</font>&nbsp;values&nbsp;in&nbsp;the&nbsp;lamp&nbsp;box<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;temperature=int(<font color=#0000bb>900</font>*gau[key])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;temperature==<font color=#0000bb>0</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_off_once=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=str(temperature)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>2001</font>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#dynamic&nbsp;update&nbsp;of&nbsp;weapons&nbsp;type&nbsp;and&nbsp;remaining&nbsp;rounds/storages<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau[<font color=#0000bb>2002</font>]&#62;-<font color=#0000bb>1</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#StationTypes&nbsp;=&nbsp;{["9A4172"]&nbsp;=&nbsp;"NC",&nbsp;["S-8KOM"]&nbsp;=&nbsp;"HP",&nbsp;["S-13"]&nbsp;=&nbsp;"HP",&nbsp;["UPK-23-250"]&nbsp;=&nbsp;"NN",&nbsp;["AO-2.5RT"]&nbsp;=&nbsp;"A6",&nbsp;["PTAB-2.5KO"]&nbsp;=&nbsp;"A6",&nbsp;["FAB-250"]&nbsp;=&nbsp;"A6",&nbsp;["FAB-500"]&nbsp;=&nbsp;"A6"&nbsp;}</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_text.has_key(key):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_text[key]==<font color=#0000bb>"&nbsp;"</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=<font color=#0000bb>'HP'</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=gau_text[key]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=True<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>2002</font>&nbsp;or&nbsp;key==<font color=#0000bb>2003</font>:&nbsp;&nbsp;&nbsp;&nbsp;#same&nbsp;as&nbsp;above<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=str(int(gau[key]))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==self.def_radio:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#displaying&nbsp;radio&nbsp;freq<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=round(gau[<font color=#0000bb>577</font>]*<font color=#0000bb>23</font>)+<font color=#0000bb>10</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;tmp&#62;<font color=#0000bb>14</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=tmp+<font color=#0000bb>7</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=float(int((tmp+gau[<font color=#0000bb>574</font>])*<font color=#0000bb>10</font>))+gau[<font color=#0000bb>575</font>]+gau[<font color=#0000bb>576</font>]/1<font color=#0000bb>0</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=str(round(tmp,<font color=#0000bb>3</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>428</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;radio_text={<font color=#0000bb>0</font>:<font color=#0000bb>'vhf2'</font>,<font color=#0000bb>1</font>:<font color=#0000bb>'vhf1'</font>,<font color=#0000bb>2</font>:<font color=#0000bb>'sw'</font>,<font color=#0000bb>3</font>:<font color=#0000bb>'grn&nbsp;crw'</font>}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=radio_text[int(gau[key]*<font color=#0000bb>10</font>)]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>357</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=str((int(gau[key]*<font color=#0000bb>10</font>)+<font color=#0000bb>9</font>)%<font color=#0000bb>10</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>371</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=True<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rec[<font color=#0000bb>4</font>]=str(int(gau[key]*<font color=#0000bb>10</font>)+<font color=#0000bb>1</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(gau[key]&#62;<font color=#0000bb>0</font>&nbsp;and&nbsp;not&nbsp;turn_off_once)&nbsp;or&nbsp;force&nbsp;or&nbsp;turn_on_once:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.rect(where,self.bg_active_color[rec[<font color=#0000bb>1</font>]],(c*<font color=#0000bb>59</font>,r*<font color=#0000bb>25</font>-self.offset,self.width-<font color=#0000bb>1</font>,self.height-<font color=#0000bb>1</font>))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=self.sf.render(rec[<font color=#0000bb>2</font>].upper(),<font color=#0000bb>1</font>,self.text_color[rec[<font color=#0000bb>1</font>]])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;w,h=text.get_size()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(text,(c*self.width+self.width/<font color=#0000bb>2</font>-w/<font color=#0000bb>2</font>,r*self.height,self.width,self.height))<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=self.sf.render(rec[<font color=#0000bb>4</font>].upper(),<font color=#0000bb>1</font>,self.text_color[rec[<font color=#0000bb>3</font>]])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;w,h=text.get_size()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(text,(c*self.width+self.width/<font color=#0000bb>2</font>-w/<font color=#0000bb>2</font>,r*self.height+<font color=#0000bb>10</font>,self.width,self.height))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_on_once=False<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.rect(where,self.bg_color[rec[<font color=#0000bb>1</font>]],(c*self.width,r*self.height-self.offset,self.width-<font color=#0000bb>1</font>,self.height-<font color=#0000bb>1</font>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;turn_off_once=False<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.first_time-=<font color=#0000bb>1</font><br>
+<br>
+class&nbsp;ekran_class:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;color=(<font color=#0000bb>239</font>,<font color=#0000bb>171</font>,<font color=#0000bb>1</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;__init__(self,origin):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.w=<font color=#0000bb>100</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.h=<font color=#0000bb>25</font>*<font color=#0000bb>3</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.origin=origin<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.x,self.y=origin<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.f=pygame.font.Font(None,<font color=#0000bb>16</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.draw()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;&nbsp;draw(self):<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.f.render(gau[2004],1,self.color),self.origin)</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_text.has_key(<font color=#0000bb>2004</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=gau_text[<font color=#0000bb>2004</font>].split(<font color=#0000bb>'\n'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;len(text)==<font color=#0000bb>4</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pygame.draw.rect(where,(<font color=#0000bb>0</font>,<font color=#0000bb>0</font>,<font color=#0000bb>0</font>),(self.x,self.y,self.w,self.h))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off=<font color=#0000bb>0</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;txt&nbsp;in&nbsp;text:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line=self.f.render(txt,<font color=#0000bb>1</font>,self.color)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(line,(self.x,self.y+off))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;w,h=line.get_size()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;off=off+h<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.f.render(text[2],1,self.color),(self.x,self.y+25))</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where.blit(self.f.render(text[3],1,self.color),(self.x,self.y+50))</font><br>
+<br>
+def&nbsp;draw_all():<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;obj&nbsp;in&nbsp;gc.get_objects():</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;isinstance(obj,gauges):</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj.check_draw()</font><br>
+<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;gauges.instances</font><br>
+<br>
+&nbsp;<font color=#007f00>#&nbsp;&nbsp;&nbsp;gauges.check_draw_all()</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;obj&nbsp;in&nbsp;gauges.instances:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj.check_draw()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lamps.draw()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ekran.draw()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;win.flip()<br>
+<br>
+class&nbsp;update_data_class(threading.Thread):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;&nbsp;__init__(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;threading.Thread.__init__(self)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self._stop=threading.Event()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;stop(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self._stop.set()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;stopped(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;self._stop.isSet()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;run(self):<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;udp_ip="192.168.1.8"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;##&nbsp;nastavitelne&nbsp;IP&nbsp;cez&nbsp;class</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;udp_ip=<font color=#0000bb>"127.0.0.1"</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;udp_port=<font color=#0000bb>9089</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;##&nbsp;error&nbsp;ked&nbsp;nebudem&nbsp;moct&nbsp;otvorit&nbsp;ten&nbsp;port<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sock.bind(&nbsp;(udp_ip,udp_port)&nbsp;)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sock.setblocking(<font color=#0000bb>0</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while&nbsp;not&nbsp;self.stopped():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#key&nbsp;ids&nbsp;2001&nbsp;type&nbsp;of&nbsp;weapon&nbsp;store,2002&nbsp;remaining&nbsp;rounds&nbsp;of&nbsp;that&nbsp;store,&nbsp;2003&nbsp;remaining&nbsp;HP/AP&nbsp;cannon&nbsp;rounds,2004&nbsp;ekran=&nbsp;\n&nbsp;+&nbsp;3x&nbsp;rows&nbsp;of&nbsp;text</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;try:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data,addr=sock.recvfrom(<font color=#0000bb>1024</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_lock.acquire()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tmp=string.split(data[<font color=#0000bb>9</font>:-<font color=#0000bb>1</font>],<font color=#0000bb>":"</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;rec&nbsp;in&nbsp;tmp:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key,val=string.split(rec,<font color=#0000bb>"="</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key=int(key)<br>
+<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key&#62;2999&nbsp;or&nbsp;key==581&nbsp;or&nbsp;key==375:</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;rec</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;try:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val=float(val)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau[key]=val<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;except:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#text&nbsp;values&nbsp;which&nbsp;i&nbsp;prefer&nbsp;to&nbsp;have&nbsp;number&nbsp;storage&nbsp;too</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;key==<font color=#0000bb>2002</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau[key]=-<font color=#0000bb>1</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=#007f00>#all&nbsp;other&nbsp;values</font><br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;str(key)+'&nbsp;=&nbsp;'+val</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_text[key]=val<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_updated.set()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_lock.release()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;except:<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(3)</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(<font color=#0000bb>0.01</font>)<br>
+<br>
+<br>
+<font color=#007f00>#'{:*^30}'.format('centered')</font><br>
+<font color=#007f00>#sys.stdout.write(str('{0:{width}{key}}='.format(key=key,val=gau[key])))</font><br>
+<br>
+class&nbsp;debug_class:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;&nbsp;__init__(self,cols=<font color=#0000bb>8</font>,force_count=<font color=#0000bb>0</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.cols=cols<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.force_count=force_count<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.gau_count=defaultdict(int)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;print_out(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.linux:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;os.system(<font color=#0000bb>'clear'</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.win:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;os.system(<font color=#0000bb>'CLS'</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cols=<font color=#0000bb>0</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;<font color=#0000bb>'Debug&nbsp;output&nbsp;of&nbsp;variables'</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;key&nbsp;in&nbsp;sorted(gau.keys())&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cols+=<font color=#0000bb>1</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;refresh=True<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_old[key]!=gau[key]:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.gau_count[key]=self.force_count<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;self.gau_count[key]&#62;<font color=#0000bb>0</font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.gau_count[key]=self.gau_count[key]-<font color=#0000bb>1</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;refresh=False<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.linux:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reset_color=<font color=#0000bb>'\033[0m'</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;refresh:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>'\033[0m\033[31m'</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>'\033[0m\033[0m'</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>'\033[1m\033[34m'</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>'\033[0m\033[36m'</font><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.win:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reset_color=<font color=#0000bb>''</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;refresh:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>''</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>""</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>''</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>""</font><br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.stdout.write(key_color+str(key).rjust(<font color=#0000bb>5</font>,<font color=#0000bb>'&nbsp;'</font>)+<font color=#0000bb>'='</font>+val_color+str(gau[key]).ljust(<font color=#0000bb>7</font>,<font color=#0000bb>'&nbsp;'</font>)+reset_color+<font color=#0000bb>'&nbsp;'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(cols%self.cols==<font color=#0000bb>0</font>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.stdout.write(<font color=#0000bb>'\n'</font>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.stdout.write(<font color=#0000bb>'\n'</font>)<br>
+<br>
+running=running_class()<br>
+<br>
+pprint.pprint(Fore.RED)<br>
+<br>
+exit()<br>
+<br>
+gauge_small=<font color=#0000bb>153</font><br>
+gauge_big=<font color=#0000bb>192</font><br>
+<br>
+pygame.init()<br>
+<br>
+pygame.display.set_caption(<font color=#0000bb>"pyHelios&nbsp;lite&nbsp;KA-50"</font>)<br>
+icon=pygame.image.load(<font color=#0000bb>'img/icon.png'</font>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;##spravit&nbsp;iconku&nbsp;win/linux&nbsp;kompatibilnu<br>
+pygame.display.set_icon(icon)<br>
+<br>
+win=window_handling_class(False,<font color=#0000bb>0</font>)<br>
+<br>
+lamps=lamps_class()<br>
+<br>
+blade=blade_gauge(<font color=#0000bb>'img/blade.png'</font>,lamps.next_row,gauge_small,<font color=#0000bb>45</font>)<br>
+ias=ias_gauge(<font color=#0000bb>'img/ias.png'</font>,blade.next_right,gauge_small,<font color=#0000bb>45</font>)<br>
+acc=acc_gauge(<font color=#0000bb>'img/acc.png'</font>,ias.next_right,gauge_small,<font color=#0000bb>40</font>)<br>
+rotor_rpm=rotor_rpm_gauge(<font color=#0000bb>'img/rotor-rpm.png'</font>,acc.next_right,gauge_small,<font color=#0000bb>40</font>)<br>
+eng_rpm=eng_rpm_gauge(<font color=#0000bb>'img/eng-rpm.png'</font>,rotor_rpm.next_right,gauge_small,<font color=#0000bb>45</font>)<br>
+<br>
+fuel=fuel_gauge(<font color=#0000bb>'img/fuel.png'</font>,eng_rpm.next_row,gauge_small,<font color=#0000bb>45</font>)<br>
+temp=temp_gauge(<font color=#0000bb>'img/temp.png'</font>,fuel.next_right,gauge_small,<font color=#0000bb>20</font>)<br>
+baro=baro_gauge(<font color=#0000bb>'img/baro.png'</font>,temp.next_right,gauge_small,<font color=#0000bb>55</font>)<br>
+clock=clock_gauge(<font color=#0000bb>'img/clock.png'</font>,baro.next_right,gauge_small,<font color=#0000bb>20</font>)<br>
+adi=adi_gauge(<font color=#0000bb>'img/adi-instrument.png'</font>,clock.next_right,gauge_small)<br>
+<br>
+vvi=vvi_gauge(<font color=#0000bb>'img/vvi.png'</font>,adi.next_row,gauge_big,<font color=#0000bb>55</font>)<br>
+radar=radar_gauge(<font color=#0000bb>'img/radar.png'</font>,vvi.next_right,gauge_big,<font color=#0000bb>50</font>)<br>
+hsi=hsi_gauge(<font color=#0000bb>'img/hsi-top.png'</font>,radar.next_right,gauge_big)<br>
+ekran=ekran_class(hsi.next_right)<br>
+<br>
+win.flip()<br>
+<br>
+gatherer=update_data_class()<br>
+gatherer.start()<br>
+<br>
+<font color=#007f00>#debug=debug_class()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#will&nbsp;highlight&nbsp;changes&nbsp;just&nbsp;for&nbsp;a&nbsp;frame</font><br>
+debug=debug_class(<font color=#0000bb>8</font>,<font color=#0000bb>40</font>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#will&nbsp;highlight&nbsp;changes&nbsp;for&nbsp;<font color=#0000bb>40</font>&nbsp;frames<br>
+<br>
+<br>
+while&nbsp;keep_loop:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;event&nbsp;in&nbsp;pygame.event.get():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;event.type&nbsp;==&nbsp;QUIT&nbsp;or&nbsp;(event.type&nbsp;==&nbsp;KEYDOWN&nbsp;and&nbsp;(&nbsp;event.key&nbsp;==&nbsp;K_ESCAPE&nbsp;or&nbsp;event.key&nbsp;==&nbsp;K_q&nbsp;)&nbsp;):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gatherer.stop()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gatherer.join()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;keep_loop=False<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;event.type&nbsp;==&nbsp;KEYDOWN&nbsp;and&nbsp;event.key&nbsp;==&nbsp;K_r:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;win.rotate()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;key&nbsp;in&nbsp;gau_old.keys():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_old[key]=NaN<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;obj&nbsp;in&nbsp;gauges.instances:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj.set_force_refresh()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_updated.set()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;event.type&nbsp;==&nbsp;KEYDOWN&nbsp;and&nbsp;event.key&nbsp;==&nbsp;K_f:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;win.switch_fullscreen()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;key&nbsp;in&nbsp;gau_old.keys():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_old[key]=NaN<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;obj&nbsp;in&nbsp;gauges.instances:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj.set_force_refresh()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_updated.set()<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_updated.is_set()&nbsp;and&nbsp;not&nbsp;gatherer.stopped():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_lock.acquire()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug.print_out()<br>
+<br>
+<font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;profile.run('draw_all()')</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;draw_all()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;key&nbsp;in&nbsp;gau.keys():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_old[key]=gau[key]<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_lock.release()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_updated.clear()<br>
+</code>
