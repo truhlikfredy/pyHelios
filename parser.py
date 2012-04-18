@@ -41,9 +41,6 @@
 
 import os,sys,socket,string,pygame,math,time,threading
 import gc,pprint,profile
-#from colorama import init, Fore, Back, Style
-#import colorama
-#colorama.init()
 
 from collections import defaultdict
 from pygame.locals import *
@@ -659,6 +656,10 @@ class debug_class:
         self.gau_count=defaultdict(int)
 
     def print_out(self):
+        reset_color=''
+        key_color=''
+        val_color=''
+
         if running.linux:
             os.system('clear')
 
@@ -679,11 +680,7 @@ class debug_class:
                 else:
                     refresh=False
 
-            if running.win:
-                reset_color=''
-                key_color=''
-                val_color=''
-            else:
+            if running.linux:
                 reset_color='\033[0m'
                 if refresh:
                     key_color='\033[0m\033[31m'
