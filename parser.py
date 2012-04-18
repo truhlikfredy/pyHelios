@@ -42,9 +42,8 @@
 import os,sys,socket,string,pygame,math,time,threading
 import gc,pprint,profile
 #from colorama import init, Fore, Back, Style
-import colorama
-
-colorama.init()
+#import colorama
+#colorama.init()
 
 from collections import defaultdict
 from pygame.locals import *
@@ -665,8 +664,6 @@ class debug_class:
 
         if running.win:
             os.system('CLS')
-#            print '\n'*40
-            pass
 
         cols=0
         print 'Debug output of variables'
@@ -682,13 +679,18 @@ class debug_class:
                 else:
                     refresh=False
 
-            reset_color='\033[0m'
-            if refresh:
-                key_color='\033[0m\033[31m'
-                val_color='\033[0m\033[0m'
+            if running.win:
+                reset_color=''
+                key_color=''
+                val_color=''
             else:
-                key_color='\033[1m\033[34m'
-                val_color='\033[0m\033[36m'
+                reset_color='\033[0m'
+                if refresh:
+                    key_color='\033[0m\033[31m'
+                    val_color='\033[0m\033[0m'
+                else:
+                    key_color='\033[1m\033[34m'
+                    val_color='\033[0m\033[36m'
 
             sys.stdout.write(key_color+str(key).rjust(5,' ')+'='+val_color+str(gau[key]).ljust(7,' ')+reset_color+' ')
             if (cols%self.cols==0):
@@ -770,7 +772,8 @@ while keep_loop:
     if gau_updated.is_set() and not gatherer.stopped():
         gau_lock.acquire()
 
-        debug.print_out()
+        if running.linux:
+            debug.print_out()
 
 #       profile.run('draw_all()')
         draw_all()
