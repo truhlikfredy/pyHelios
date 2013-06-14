@@ -782,7 +782,6 @@ gatherer.start()
 #debug=debug_class()                 #will highlight changes just for a frame
 debug=debug_class(8,40)             #will highlight changes for 40 frames
 
-
 while keep_loop:
     for event in pygame.event.get():
         if event.type == QUIT or (event.type == KEYDOWN and ( event.key == K_ESCAPE or event.key == K_q ) ):

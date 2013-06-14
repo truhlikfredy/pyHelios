@@ -42,9 +42,6 @@
 <br>
 import&nbsp;os,sys,socket,string,pygame,math,time,threading<br>
 import&nbsp;gc,pprint,profile<br>
-from&nbsp;colorama&nbsp;import&nbsp;init,&nbsp;Fore,&nbsp;Back,&nbsp;Style<br>
-<br>
-init()<br>
 <br>
 from&nbsp;collections&nbsp;import&nbsp;defaultdict<br>
 from&nbsp;pygame.locals&nbsp;import&nbsp;*<br>
@@ -660,6 +657,10 @@ class&nbsp;debug_class:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.gau_count=defaultdict(int)<br>
 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;def&nbsp;print_out(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reset_color=<font color=#0000bb>''</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>''</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>''</font><br>
+<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.linux:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;os.system(<font color=#0000bb>'clear'</font>)<br>
 <br>
@@ -689,27 +690,13 @@ class&nbsp;debug_class:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>'\033[1m\033[34m'</font><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>'\033[0m\033[36m'</font><br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.win:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reset_color=<font color=#0000bb>''</font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;refresh:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>''</font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>""</font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;key_color=<font color=#0000bb>''</font><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val_color=<font color=#0000bb>""</font><br>
-<br>
-<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.stdout.write(key_color+str(key).rjust(<font color=#0000bb>5</font>,<font color=#0000bb>'&nbsp;'</font>)+<font color=#0000bb>'='</font>+val_color+str(gau[key]).ljust(<font color=#0000bb>7</font>,<font color=#0000bb>'&nbsp;'</font>)+reset_color+<font color=#0000bb>'&nbsp;'</font>)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(cols%self.cols==<font color=#0000bb>0</font>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.stdout.write(<font color=#0000bb>'\n'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;<font color=#0000bb>''</font><br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.stdout.write(<font color=#0000bb>'\n'</font>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print&nbsp;<font color=#0000bb>''</font><br>
 <br>
 running=running_class()<br>
-<br>
-pprint.pprint(Fore.RED)<br>
-<br>
-exit()<br>
 <br>
 gauge_small=<font color=#0000bb>153</font><br>
 gauge_big=<font color=#0000bb>192</font><br>
@@ -783,7 +770,8 @@ while&nbsp;keep_loop:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;gau_updated.is_set()&nbsp;and&nbsp;not&nbsp;gatherer.stopped():<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gau_lock.acquire()<br>
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug.print_out()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;running.linux:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug.print_out()<br>
 <br>
 <font color=#007f00>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;profile.run('draw_all()')</font><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;draw_all()<br>
