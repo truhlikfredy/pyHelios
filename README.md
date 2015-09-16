@@ -10,6 +10,7 @@ This project is stalled, feel free to take this project and use it under GPL lic
 * Can be rotated quickly
 * Kamov panels included
 * Open source, feel free to modify or change it to your needs
+* Can be rotated in runtime
 
 ## Disadvantages over helios
 * Each change in panels requires change in code
