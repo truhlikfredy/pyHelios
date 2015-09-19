@@ -14,7 +14,7 @@ This project is stalled, feel free to take this project and use it under GPL lic
 
 ## Disadvantages over helios
 * Each change in panels requires change in code
-* Unfinished product 
+* Unfinished product and my first bigger Python project (which probably means the code is not great)
 
 # Video
 
